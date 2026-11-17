@@ -24,6 +24,9 @@ for (const id of ['wire','coil','solenoid','flux','pendulum','projectile','incli
 for (const key of ['wire','coil','solenoid','flux']) assert.ok(data[key], 'missing experiment data: ' + key);
 assert.match(app, /state\.reverse\?\.13:-\.13/, 'wire field arrows must follow the right-hand rule and reverse with current');
 assert.match(app, /needle\.rotation\.y=fieldZ<0\?Math\.PI:0/, 'Oersted compass needle must align with the local magnetic field');
+assert.match(app, /function compass\(pos=\[1\.7,-\.15,0\],vertical=false\)/, 'coil compass must be orientable in the vertical field plane');
+assert.match(app, /if\(exp==='coil'\)\{arrow\(\[0,state\.reverse\?-.65:\.65,0\]/, 'circular-coil field must follow its axis');
+assert.match(app, /for\(let x=-\.36;x<=\.36;x\+=\.36\)for\(let z=-\.28;z<=\.28;z\+=\.28\)arrow\(\[x,state\.reverse\?-1\.1:1\.1,z\]/, 'solenoid field must run along its axis');
 assert.match(app, /Math\.min\(30,state\.turns\)/, 'solenoid visualization must support all selectable turns');
 assert.match(app, /Math\.asin\(Math\.max\(-1,Math\.min\(1,Math\.sin\(a\)\/state\.refractive\)\)\)/, 'refraction must use Snell law');
 assert.match(app, /Object\.assign\(state,\{current:2/, 'reset must restore experiment defaults');
