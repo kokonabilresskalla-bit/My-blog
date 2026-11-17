@@ -71,8 +71,8 @@ function buildScene(){
   const needle=compass([1.75,.05,0],true);needle.rotation.y=state.reverse?0:Math.PI;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
-  const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const areaScale=Math.sqrt(state.area/.2),plane=add(new THREE.PlaneGeometry(2.8*areaScale,1.9*areaScale),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
-  const edgeGeom=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82*areaScale,.025,1.92*areaScale));const edgeMat=new THREE.LineBasicMaterial({color:0xe7f8ff});edgeMat.userData.owned=true;const edge=new THREE.LineSegments(edgeGeom,edgeMat);edge.rotation.x=Math.PI/2-state.angle*Math.PI/180;root.add(edge);
+  const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const areaScale=Math.sqrt(state.area/.2),plane=add(new THREE.PlaneGeometry(2.8*areaScale,1.9*areaScale),fluxMat,[0,0,0]);plane.rotation.x=state.angle*Math.PI/180-Math.PI/2;
+  const edgeGeom=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82*areaScale,.025,1.92*areaScale));const edgeMat=new THREE.LineBasicMaterial({color:0xe7f8ff});edgeMat.userData.owned=true;const edge=new THREE.LineSegments(edgeGeom,edgeMat);edge.rotation.x=state.angle*Math.PI/180-Math.PI/2;root.add(edge);
   for(let x=-2;x<=2;x+=.6)arrow([x,-(.25+state.field*.35),-1.4],[x,.25+state.field*.35,-1.4],cyan,.012+state.field*.012);
   const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
  }else if(exp==='pendulum'){
