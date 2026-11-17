@@ -1,5 +1,4 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+let THREE, OrbitControls;
 
 const $ = id => document.getElementById(id);
 const viewport = $('viewport');
@@ -10,8 +9,11 @@ const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), dragPlan
 const materials = [];
 const mat = (color, metalness=.25, roughness=.35) => { const m = new THREE.MeshStandardMaterial({color,metalness,roughness}); materials.push(m); return m; };
 
-function init(){
+async function init(){
   try {
+    const [threeModule, controlsModule] = await Promise.all([import('three'), import('three/addons/controls/OrbitControls.js')]);
+    THREE = threeModule;
+    OrbitControls = controlsModule.OrbitControls;
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x071426); scene.fog = new THREE.Fog(0x071426, 12, 28);
     camera = new THREE.PerspectiveCamera(42,1,.1,100); camera.position.set(6,5,7);
     renderer = new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -32,7 +34,7 @@ function init(){
     renderer.domElement.addEventListener('pointerup',onPointerUp);
     renderer.domElement.addEventListener('pointercancel',onPointerUp);
     new ResizeObserver(resize).observe(viewport); resize(); build(); animate();
-  } catch(err){ showError('تعذر تشغيل المشهد ثلاثي الأبعاد. افتح الصفحة بمتصفح حديث وتأكد من اتصال الإنترنت، ثم أعد التحميل.'); console.error(err); }
+  } catch(err){ console.error('3D initialization failed:', err); showError('فشل تحميل مكتبة العرض ثلاثي الأبعاد أو تشغيل WebGL. تأكد من اتصال الإنترنت، ثم افتح الصفحة في Chrome واضغط إعادة المحاولة. تفاصيل الخطأ: '+(err?.message || 'غير متاحة')); }
 }
 function showError(msg){ viewport.innerHTML='<div class="scene-error"><b>المعمل ثلاثي الأبعاد مش قادر يبدأ</b><span>'+msg+'</span><button onclick="location.reload()">إعادة المحاولة</button></div>'; }
 function resize(){ if(!renderer)return; const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight); camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }
