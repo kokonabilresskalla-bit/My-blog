@@ -47,7 +47,7 @@ function compass(pos=[1.7,-.15,0]){
 function ring(radius,y,material){const o=add(new THREE.TorusGeometry(radius,.025,10,96),material,[0,y,0]);o.rotation.x=Math.PI/2;return o}
 function labBase(w=3.8,d=2.6){const g=new THREE.Group();g.position.y=-1.48;root.add(g);add(new THREE.BoxGeometry(w,.14,d),dark,[0,0,0],g);add(new THREE.BoxGeometry(w-.12,.025,d-.12),steel,[0,.083,0],g);for(const x of [-1,1])for(const z of [-1,1])add(new THREE.CylinderGeometry(.055,.07,.1,16),gold,[x*(w/2-.16),-.12,z*(d/2-.16)],g);return g}
 function labStand(x=-.8){const g=new THREE.Group();g.position.set(x,-1.3,0);root.add(g);add(new THREE.BoxGeometry(.9,.13,.68),dark,[0,0,0],g);add(new THREE.BoxGeometry(.72,.025,.5),steel,[0,.08,0],g);add(new THREE.CylinderGeometry(.055,.065,2.65,20),steel,[0,1.42,0],g);add(new THREE.CylinderGeometry(.12,.12,.1,20),gold,[0,2.78,0],g);beam([0,1.25,0],[.85,1.25,0],steel,.05,g);return g}
-function supply(){const g=new THREE.Group();g.position.set(-2,-.72,.18);root.add(g);add(new THREE.BoxGeometry(.9,.58,.55),mat(0x263f58,.5,.3),[0,0,0],g);add(new THREE.BoxGeometry(.62,.2,.025),mat(0x07111d,.2,.15),[0,.12,.29],g);const c=document.createElement('canvas');c.width=192;c.height=64;const x=c.getContext('2d');x.fillStyle='#07111d';x.fillRect(0,0,192,64);x.fillStyle='#61f5cf';x.font='bold 34px monospace';x.fillText(state.current.toFixed(1)+' A',12,44);const tex=new THREE.CanvasTexture(c),m=new THREE.SpriteMaterial({map:tex,transparent:true});m.userData.owned=true;const s=new THREE.Sprite(m);s.position.set(0,.13,.32);s.scale.set(.5,.17,1);g.add(s);for(const x of [-.24,.24])add(new THREE.CylinderGeometry(.06,.06,.06,20),gold,[x,-.13,.3],g)}
+function supply(){const g=new THREE.Group();g.position.set(-2,-.72,.18);root.add(g);add(new THREE.BoxGeometry(.9,.58,.55),mat(0x263f58,.5,.3),[0,0,0],g);add(new THREE.BoxGeometry(.62,.2,.025),mat(0x07111d,.2,.15),[0,.12,.29],g);const c=document.createElement('canvas');c.width=192;c.height=64;const x=c.getContext('2d');x.fillStyle='#07111d';x.fillRect(0,0,192,64);x.fillStyle='#61f5cf';x.font='bold 34px monospace';x.fillText((['ohm','series'].includes(state.exp)?state.voltage.toFixed(1)+' V':state.current.toFixed(1)+' A'),12,44);const tex=new THREE.CanvasTexture(c),m=new THREE.SpriteMaterial({map:tex,transparent:true});m.userData.owned=true;const s=new THREE.Sprite(m);s.position.set(0,.13,.32);s.scale.set(.5,.17,1);g.add(s);for(const x of [-.24,.24])add(new THREE.CylinderGeometry(.06,.06,.06,20),gold,[x,-.13,.3],g)}
 function resistor(){const g=new THREE.Group();g.position.set(0,-.45,0);root.add(g);beam([-.7,0,0],[-.3,0,0],steel,.025,g);beam([.3,0,0],[.7,0,0],steel,.025,g);const body=add(new THREE.CylinderGeometry(.14,.14,.62,24),mat(0xd7d2c0,.12,.35),[0,0,0],g);body.rotation.z=Math.PI/2;for(let i=0;i<4;i++){const b=add(new THREE.TorusGeometry(.145,.018,8,20),[gold,red,blue,gold][i],[-.19+i*.125,0,0],g);b.rotation.y=Math.PI/2}}
 function buildScene(){
  clearRoot();animator=()=>{};
@@ -59,20 +59,20 @@ function buildScene(){
   tube([[-1.55,-.72,.18],[-.9,-.72,.18],[-.5,-.72,.18],[-.5,1.82,.18],[.75,1.82,.18]],red,.035);
   tube([[.75,-1.72,.18],[-.5,-1.72,.18],[-.5,-.72,.18]],blue,.035);
   arrow([.75,-1.45,0],[.75,1.5,0],state.reverse?blue:red,.04);
-  for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.012);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
+  for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.007+Math.min(state.current,8)*.0014);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
   const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);const fieldZ=-(state.reverse?-1:1)*state.current/Math.max(.3,state.distance);needle.rotation.y=Math.atan2(1.0,fieldZ);
   label('تجربة أورستد',[.4,2.25,0]);
  }else if(exp==='coil'||exp==='solenoid'){
   labBase();labStand(-1.25);labStand(1.25);
   const n=Math.max(3,Math.min(24,state.turns));
-  for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.035)}
-  for(let y=-1;y<=1;y+=.38)arrow([0,y,state.reverse?.55:-.5],[0,y,state.reverse?-.55:.55],state.reverse?blue:cyan,.025);
+  for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.025+state.current*.0015)}
+  for(let y=-1;y<=1;y+=.38)arrow([0,y,state.reverse?.55:-.5],[0,y,state.reverse?-.55:.55],state.reverse?blue:cyan,.015+state.current*.0015);
   const needle=compass([1.75,.05,0]);needle.rotation.y=state.reverse?Math.PI:0;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
-  const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const plane=add(new THREE.PlaneGeometry(2.8,1.9),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
-  const edgeGeom=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82,.025,1.92));const edgeMat=new THREE.LineBasicMaterial({color:0xe7f8ff});edgeMat.userData.owned=true;const edge=new THREE.LineSegments(edgeGeom,edgeMat);edge.rotation.x=Math.PI/2-state.angle*Math.PI/180;root.add(edge);
-  for(let x=-2;x<=2;x+=.6)arrow([x,-.8,-1.4],[x,.8,-1.4],cyan,.022);
+  const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const areaScale=Math.sqrt(state.area/.2),plane=add(new THREE.PlaneGeometry(2.8*areaScale,1.9*areaScale),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
+  const edgeGeom=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82*areaScale,.025,1.92*areaScale));const edgeMat=new THREE.LineBasicMaterial({color:0xe7f8ff});edgeMat.userData.owned=true;const edge=new THREE.LineSegments(edgeGeom,edgeMat);edge.rotation.x=Math.PI/2-state.angle*Math.PI/180;root.add(edge);
+  for(let x=-2;x<=2;x+=.6)arrow([x,-(.25+state.field*.35),-1.4],[x,.25+state.field*.35,-1.4],cyan,.012+state.field*.012);
   const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
  }else if(exp==='pendulum'){
   labBase(3.2,2.2);labStand(0);
@@ -83,12 +83,12 @@ function buildScene(){
  }else if(exp==='projectile'){
   const v=state.voltage,a=state.angle*Math.PI/180,T=2*v*Math.sin(a)/9.81,pts=[];for(let i=0;i<=80;i++){const t=T*i/80;pts.push([v*Math.cos(a)*t/3,(v*Math.sin(a)*t-4.905*t*t)/3,0])}tube(pts,cyan,.035);add(new THREE.SphereGeometry(.13,24,16),gold,[0,0,0]);beam([-.5,-1.45,0],[.5,-1.45,0],steel,.035);
  }else if(exp==='incline'){
-  const a=state.angle*Math.PI/180,plane=add(new THREE.BoxGeometry(3,.12,1.6),dark,[-.15,-.45,0]);plane.rotation.z=a;beam([-1.55,-1.4,0],[1.45*Math.cos(a)-.1,1.45*Math.sin(a)-1.4,0],gold,.045);add(new THREE.BoxGeometry(.45,.45,.45),gold,[-.5,-.5,0]).rotation.z=a;
+  const a=state.angle*Math.PI/180,plane=add(new THREE.BoxGeometry(3,.12,1.6),dark,[-.15,-.45,0]);plane.rotation.z=a;beam([-1.55,-1.4,0],[1.45*Math.cos(a)-.1,1.45*Math.sin(a)-1.4,0],gold,.045);const block=add(new THREE.BoxGeometry(.38+state.mass*.018,.38+state.mass*.018,.38+state.mass*.018),gold,[-.5,-.5,0]);block.rotation.z=a;
   arrow([-.5,-.5,0],[-.5,-1.4,0],red,.025);
  }else if(exp==='ohm'||exp==='series'){
   labBase(4.8,2.5);supply();
   const pts=[[-1.8,.45,0],[-.9,.45,0],[-.9,-.45,0],[.9,-.45,0],[.9,.45,0],[1.8,.45,0]];for(let i=0;i<pts.length-1;i++)beam(pts[i],pts[i+1],cyan,.035);
-  resistor();add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
+  resistor();label('R₁ '+state.resistance+' Ω',[-.15,-.02,.28]);label('R₂ '+state.resistance2+' Ω',[.9,-.02,.28]);add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
  }else if(exp==='reflection'||exp==='refraction'){
   const opticMat=new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide});opticMat.userData.owned=true;add(new THREE.PlaneGeometry(4,3),opticMat,[0,-.6,0]);
   beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
@@ -192,9 +192,10 @@ $('pauseMotion').onclick=()=>{state.paused=!state.paused;$('pauseMotion').textCo
 $('zoomIn').onclick=()=>{state.zoom=Math.min(1.8,state.zoom*1.12);draw()};
 $('zoomOut').onclick=()=>{state.zoom=Math.max(.65,state.zoom/1.12);draw()};
 $('resetScene').onclick=()=>{state.yaw=-.35;state.pitch=.22;state.zoom=1;renderAll()};
-canvas.addEventListener('pointerdown',e=>{state.drag=true;state.px=e.clientX;state.py=e.clientY;canvas.setPointerCapture(e.pointerId)});
-canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY;updateCamera();renderer.render(scene,camera)});
-canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.55,Math.min(2.2,state.zoom*(e.deltaY>0?.92:1.08)));updateCamera();renderer.render(scene,camera)},{passive:false});
+const activePointers=new Map();let pinchStart=0,pinchZoom=1;
+canvas.addEventListener('pointerdown',e=>{activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});state.drag=true;state.px=e.clientX;state.py=e.clientY;if(activePointers.size===2){const p=[...activePointers.values()];pinchStart=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);pinchZoom=state.zoom}canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(activePointers.size>=2){const p=[...activePointers.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchStart>0)state.zoom=Math.max(.55,Math.min(2.2,pinchZoom*d/pinchStart));}else{state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY}updateCamera();renderer.render(scene,camera)});
+const stopPointer=e=>{activePointers.delete(e.pointerId);state.drag=activePointers.size>0;if(activePointers.size<2)pinchStart=0};canvas.addEventListener('pointerup',stopPointer);canvas.addEventListener('pointercancel',stopPointer);canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.55,Math.min(2.2,state.zoom*(e.deltaY>0?.92:1.08)));updateCamera();renderer.render(scene,camera)},{passive:false});
 const fullBtn=$('fullscreenScene');if(fullBtn)fullBtn.onclick=async()=>{const panel=document.querySelector('.scene-panel');try{if(!document.fullscreenElement)await panel.requestFullscreen();else await document.exitFullscreen();}catch(e){panel.classList.toggle('expanded-view')}resize()};
 document.addEventListener('fullscreenchange',resize);
 renderAll();resize();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});loop();
