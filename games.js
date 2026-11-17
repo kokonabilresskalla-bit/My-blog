@@ -21,7 +21,7 @@ function compute(){
 }
 function validate(){
  if(!missions[mode].slots.every(([s])=>placed[s])){message('لسه فيه أماكن فاضية. ركّب كل العناصر الأول.','warn');return}
- if(!correct()){broken=true;closed=true;render();message('حصل قصر أو توصيل غلط! اللمبة اتحرقت في المحاكاة. راجع أماكن العناصر.','bad');return}
+ if(!correct()){broken=true;closed=true;render();message('التوصيل أو قيمة المقاومة مش مطابقة للمخطط! حصل تلف افتراضي في اللمبة. راجع التوصيلات والقيم.','bad');return}
  const result=compute(),target=missions[mode].target;
  if(Math.abs(result.current-target)>.015){broken=true;closed=true;render();message('التركيب مش مطابق للقيمة المطلوبة؛ اللمبة تعطلت في المحاكاة.','bad');return}
  closed=true;broken=false;render();message('ممتاز! الدائرة صحيحة واللمبة نورت. التيار '+result.current.toFixed(2)+' A والمقاومة المكافئة '+result.req.toFixed(2)+' Ω.','good');
