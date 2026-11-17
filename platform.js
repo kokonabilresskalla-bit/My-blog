@@ -16,7 +16,7 @@ const rimLight=new THREE.PointLight(0x36bfff,35,18);rimLight.position.set(-5,3,-
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x0a1b2b,roughness:.92,metalness:.05}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.65;floor.receiveShadow=true;scene.add(floor);
 const grid=new THREE.GridHelper(18,36,0x24506c,0x17354c);grid.position.y=-1.63;scene.add(grid);
 const root=new THREE.Group();scene.add(root);
-const state={lab:'magnetism',exp:'wire',current:2,distance:1.5,turns:8,angle:0,area:.2,field:.5,voltage:6,resistance:12,mass:1,height:1,length:1,frequency:2,amplitude:1,refractive:1.5,paused:false,yaw:-.55,pitch:.32,zoom:1,drag:false,reverse:false};
+const state={lab:'magnetism',exp:'wire',current:2,distance:1.5,turns:8,angle:0,area:.2,field:.5,voltage:6,resistance:12,mass:1,height:1,length:1,frequency:2,amplitude:1,refractive:1.5,resistance2:8,paused:false,yaw:-.55,pitch:.32,zoom:1,drag:false,reverse:false};
 let animator=()=>{};
 function resize(){const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();updateCamera()}
 new ResizeObserver(resize).observe(canvas);window.addEventListener('resize',resize);
@@ -60,14 +60,14 @@ function buildScene(){
   tube([[.75,-1.72,.18],[-.5,-1.72,.18],[-.5,-.72,.18]],blue,.035);
   arrow([.75,-1.45,0],[.75,1.5,0],state.reverse?blue:red,.04);
   for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.012);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
-  const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);needle.rotation.y=Math.atan2(state.current/Math.max(.3,state.distance),1.4)*(state.reverse?-1:1);
+  const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);const fieldZ=-(state.reverse?-1:1)*state.current/Math.max(.3,state.distance);needle.rotation.y=Math.atan2(1.0,fieldZ);
   label('تجربة أورستد',[.4,2.25,0]);
  }else if(exp==='coil'||exp==='solenoid'){
   labBase();labStand(-1.25);labStand(1.25);
   const n=Math.max(3,Math.min(24,state.turns));
   for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.035)}
-  for(let y=-1;y<=1;y+=.38)arrow([0,y,-.5],[0,y,.55],cyan,.025);
-  const needle=compass([1.75,.05,0]);needle.rotation.y=.2;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
+  for(let y=-1;y<=1;y+=.38)arrow([0,y,state.reverse?.55:-.5],[0,y,state.reverse?-.55:.55],state.reverse?blue:cyan,.025);
+  const needle=compass([1.75,.05,0]);needle.rotation.y=state.reverse?Math.PI:0;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
   const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const plane=add(new THREE.PlaneGeometry(2.8,1.9),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
@@ -76,8 +76,8 @@ function buildScene(){
   const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
  }else if(exp==='pendulum'){
   labBase(3.2,2.2);labStand(0);
-  const pivot=add(new THREE.SphereGeometry(.12,24,16),gold,[0,1.6,0]);
-  const arm=new THREE.Group();arm.position.set(0,1.6,0);root.add(arm);beam([0,0,0],[0,-1.8,0],steel,.025,arm);add(new THREE.SphereGeometry(.24,32,24),gold,[0,-1.8,0],arm);
+  const L=Math.max(.25,state.length),pivot=add(new THREE.SphereGeometry(.12,24,16),gold,[0,1.6,0]);
+  const arm=new THREE.Group();arm.position.set(0,1.6,0);root.add(arm);beam([0,0,0],[0,-L,0],steel,.025,arm);add(new THREE.SphereGeometry(.16+state.mass*.035,32,24),gold,[0,-L,0],arm);
   animator=t=>{if(!state.paused)arm.rotation.z=Math.sin(t*2.1)*.42};
   beam([-.7,1.6,0],[.7,1.6,0],steel,.035);
  }else if(exp==='projectile'){
@@ -93,7 +93,7 @@ function buildScene(){
   const opticMat=new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide});opticMat.userData.owned=true;add(new THREE.PlaneGeometry(4,3),opticMat,[0,-.6,0]);
   beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
   const a=state.angle*Math.PI/180;beam([-1.7,1.5,0],[0,0,0],gold,.035);
-  if(exp==='reflection')beam([0,0,0],[1.7,1.5,0],gold,.035);else beam([0,0,0],[1.3,-Math.sin(a)/state.refractive*1.7,0],cyan,.035);
+  if(exp==='reflection')beam([0,0,0],[1.7*Math.sin(a),1.7*Math.cos(a),0],gold,.035);else beam([0,0,0],[1.7*Math.sin(a)/state.refractive,-1.7*Math.cos(a),0],cyan,.035);
  }else if(exp==='wave'){
   const pts=[];for(let x=-3;x<=3;x+=.06)pts.push([x,Math.sin(x*state.frequency)*state.amplitude,0]);tube(pts,cyan,.04);
   beam([-3.2,0,0],[3.2,0,0],steel,.012);
@@ -142,7 +142,7 @@ pendulum:[['length','طول الخيط','m',.2,3,.05],['mass','كتلة الثق
 projectile:[['voltage','سرعة الإطلاق','m/s',5,35,1],['angle','زاوية الإطلاق','°',10,80,1]],
 incline:[['angle','زاوية الميل','°',5,60,1],['mass','الكتلة','kg',.5,10,.5]],
 ohm:[['voltage','فرق الجهد','V',1,24,.5],['resistance','المقاومة','Ω',1,100,1]],
-series:[['resistance','المقاومة R₁','Ω',1,100,1],['mass','المقاومة R₂','Ω',1,100,1]],
+series:[['resistance','المقاومة R₁','Ω',1,100,1],['resistance2','المقاومة R₂','Ω',1,100,1]],
 reflection:[['angle','زاوية السقوط','°',0,80,1]],
 refraction:[['angle','زاوية السقوط','°',0,80,1],['refractive','معامل الانكسار','n',1.1,2.5,.05]],
 wave:[['frequency','التردد','Hz',.5,8,.1],['amplitude','السعة','cm',.2,2,.1]]
@@ -176,7 +176,7 @@ function updateReadout(){
  break;
  case'ohm':val=(state.voltage/state.resistance).toFixed(3);unit='A';secondary='التيار = الجهد ÷ المقاومة';
  break;
- case'series':val=(state.resistance+state.mass).toFixed(2);unit='Ω';secondary='المقاومة المكافئة في التوالي';
+ case'series':val=(state.resistance+state.resistance2).toFixed(2);unit='Ω';secondary='المقاومة المكافئة في التوالي';
  break;
  case'reflection':val=state.angle.toFixed(0);unit='°';secondary='زاوية الانعكاس تساوي زاوية السقوط';
  break;
@@ -194,5 +194,7 @@ $('zoomOut').onclick=()=>{state.zoom=Math.max(.65,state.zoom/1.12);draw()};
 $('resetScene').onclick=()=>{state.yaw=-.35;state.pitch=.22;state.zoom=1;renderAll()};
 canvas.addEventListener('pointerdown',e=>{state.drag=true;state.px=e.clientX;state.py=e.clientY;canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY;updateCamera();renderer.render(scene,camera)});
-canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);
+canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.55,Math.min(2.2,state.zoom*(e.deltaY>0?.92:1.08)));updateCamera();renderer.render(scene,camera)},{passive:false});
+const fullBtn=$('fullscreenScene');if(fullBtn)fullBtn.onclick=async()=>{const panel=document.querySelector('.scene-panel');try{if(!document.fullscreenElement)await panel.requestFullscreen();else await document.exitFullscreen();}catch(e){panel.classList.toggle('expanded-view')}resize()};
+document.addEventListener('fullscreenchange',resize);
 renderAll();resize();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});loop();
