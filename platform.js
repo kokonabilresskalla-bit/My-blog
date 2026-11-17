@@ -60,12 +60,12 @@ function buildScene(){
   tube([[.75,-1.72,.18],[-.5,-1.72,.18],[-.5,-.72,.18]],blue,.035);
   if(state.reverse)arrow([.75,1.5,0],[.75,-1.45,0],blue,.04);else arrow([.75,-1.45,0],[.75,1.5,0],red,.04);
   const currentDots=[-.9,0,.9].map(y=>add(new THREE.SphereGeometry(.07,16,12),state.reverse?blue:red,[.75,y,0]));animator=t=>{if(!state.paused)currentDots.forEach((p,i)=>{const dir=state.reverse?-1:1;p.position.y=-1.2+(((t*.85*dir+i*.8+4)%2.4+2.4)%2.4)})};
-  for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.007+Math.min(state.current,8)*.0014);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
+  for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.007+Math.min(state.current,8)*.0014);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3,da=state.reverse?-.13:.13;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+da)*r,0,Math.sin(a+da)*r],cyan,.018)}}
   const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);const fieldZ=-(state.reverse?-1:1)*state.current/Math.max(.3,state.distance);needle.rotation.y=Math.atan2(1.0,fieldZ);
   label('تجربة أورستد',[.4,2.25,0]);
  }else if(exp==='coil'||exp==='solenoid'){
   labBase();labStand(-1.25);labStand(1.25);
-  const n=Math.max(3,Math.min(24,state.turns));
+  const n=Math.max(3,Math.min(30,state.turns));
   for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.025+state.current*.0015)}
   for(let y=-1;y<=1;y+=.38)arrow([0,y,state.reverse?.55:-.5],[0,y,state.reverse?-.55:.55],state.reverse?blue:cyan,.015+state.current*.0015);
   const needle=compass([1.75,.05,0]);needle.rotation.y=state.reverse?Math.PI:0;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
@@ -93,8 +93,8 @@ function buildScene(){
  }else if(exp==='reflection'||exp==='refraction'){
   const opticMat=new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide});opticMat.userData.owned=true;add(new THREE.PlaneGeometry(4,3),opticMat,[0,-.6,0]);
   beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
-  const a=state.angle*Math.PI/180;beam([-1.7,1.5,0],[0,0,0],gold,.035);
-  if(exp==='reflection')beam([0,0,0],[1.7*Math.sin(a),1.7*Math.cos(a),0],gold,.035);else beam([0,0,0],[1.7*Math.sin(a)/state.refractive,-1.7*Math.cos(a),0],cyan,.035);
+  const a=state.angle*Math.PI/180;beam([-1.7*Math.sin(a),1.7*Math.cos(a),0],[0,0,0],gold,.035);
+  if(exp==='reflection')beam([0,0,0],[1.7*Math.sin(a),1.7*Math.cos(a),0],gold,.035);else{const refracted=Math.asin(Math.max(-1,Math.min(1,Math.sin(a)/state.refractive)));beam([0,0,0],[1.7*Math.sin(refracted),-1.7*Math.cos(refracted),0],cyan,.035)}
  }else if(exp==='wave'){
   const count=120,positions=new Float32Array((count+1)*3),geo=new THREE.BufferGeometry();for(let i=0;i<=count;i++){const x=-3+6*i/count;positions[i*3]=x;positions[i*3+1]=Math.sin(x*state.frequency)*state.amplitude;positions[i*3+2]=0}geo.setAttribute('position',new THREE.BufferAttribute(positions,3));geo.computeBoundingSphere();const waveMat=new THREE.LineBasicMaterial({color:0x42d8ff});waveMat.userData.owned=true;const waveLine=new THREE.Line(geo,waveMat);root.add(waveLine);beam([-3.2,0,0],[3.2,0,0],steel,.012);animator=t=>{if(!state.paused){const attr=geo.attributes.position;for(let i=0;i<=count;i++){const x=attr.getX(i);attr.setY(i,Math.sin(x*state.frequency-t*2)*state.amplitude)}attr.needsUpdate=true;geo.computeBoundingSphere()}};
  }
@@ -191,7 +191,7 @@ $('reverseCurrent').onclick=()=>{state.reverse=!state.reverse;draw()};
 $('pauseMotion').onclick=()=>{state.paused=!state.paused;$('pauseMotion').textContent=state.paused?'استئناف الحركة':'إيقاف الحركة'};
 $('zoomIn').onclick=()=>{state.zoom=Math.min(1.8,state.zoom*1.12);draw()};
 $('zoomOut').onclick=()=>{state.zoom=Math.max(.65,state.zoom/1.12);draw()};
-$('resetScene').onclick=()=>{state.yaw=-.35;state.pitch=.22;state.zoom=1;renderAll()};
+$('resetScene').onclick=()=>{Object.assign(state,{current:2,distance:1.5,turns:8,angle:0,area:.2,field:.5,voltage:6,resistance:12,mass:1,height:1,length:1,frequency:2,amplitude:1,refractive:1.5,resistance2:8,paused:false,yaw:-.55,pitch:.32,zoom:1,reverse:false});renderAll()};
 const activePointers=new Map();let pinchStart=0,pinchZoom=1;
 canvas.addEventListener('pointerdown',e=>{activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});state.drag=true;state.px=e.clientX;state.py=e.clientY;if(activePointers.size===2){const p=[...activePointers.values()];pinchStart=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);pinchZoom=state.zoom}canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(activePointers.size>=2){const p=[...activePointers.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchStart>0)state.zoom=Math.max(.55,Math.min(2.2,pinchZoom*d/pinchStart));}else{state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY}updateCamera();renderer.render(scene,camera)});
