@@ -16,6 +16,8 @@ jobs:
           node --check platform.js
           node --check games.js
           node --check tests/validate.mjs
+          node --check tests/games-runtime.mjs
       - name: Validate app structure and calculations
-        run: node tests/validate.mjs
+        run: |
+          node tests/validate.mjs
           node tests/games-runtime.mjs
