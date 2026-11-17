@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 const viewport = $('viewport');
 let canvas, ctx, W=900, H=560, yaw=.72, pitch=.42, zoom=1, dragging=false, lastX=0,lastY=0;
 let mode='wire', current=2, distance=1.5, turns=6, reverse=false, paused=false, compassAngle=0, fluxB=.5, area=.2, theta=0;
-let anim=0, lastTime=0, fluxTilt=0;
+let anim=0, lastTime=0, fluxTilt=0, experimentData=null;
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const V=(x,y,z)=>({x,y,z});
@@ -130,17 +130,14 @@ function updateReadout(){
  $('field-direction').textContent=mode==='flux'?'فيض خلال السطح':reverse?'اتجاه معكوس':'قاعدة اليد اليمنى';
  $('needle-value').textContent=mode==='flux'?theta+'°':mode==='wire'?Math.round((compassAngle*180/Math.PI+360)%360)+'°':reverse?'180°':'0°';
  $('current-value').textContent=mode==='flux'?'—':current.toFixed(1)+' A';
- const notes={
- wire:['إبرة البوصلة تصطف مماسيًا مع خطوط المجال الدائرية حول السلك.','وجّه إبهام اليد اليمنى مع التيار؛ التفاف الأصابع يحدد اتجاه المجال.','اعكس اتجاه التيار ولاحظ انعكاس اتجاه المجال.','المجال حول سلك مستقيم طويل','B = μ₀ I / 2πr','يتناسب المجال طرديًا مع شدة التيار وعكسيًا مع البعد عن السلك.'],
- coil:['المجال عند مركز الملف يكون تقريبًا على محور الملف.','مجالات اللفات تتجمع في اتجاه واحد داخل مركز الملف.','زوّد عدد اللفات أو شدة التيار وقارن شدة المجال.','المجال عند مركز ملف دائري','B = μ₀ N I / 2R','يزيد بزيادة عدد اللفات والتيار ويقل بزيادة نصف قطر الملف.'],
- solenoid:['داخل الملف خطوط المجال متوازية ومتقاربة؛ المجال شبه منتظم.','الملف اللولبي يشبه مغناطيسًا له قطبان شمالي وجنوبي.','غيّر عدد اللفات والتيار ولاحظ زيادة المجال.','المجال داخل ملف لولبي طويل','B = μ₀ n I','يزيد بزيادة عدد اللفات لكل وحدة طول وشدة التيار.'],
- flux:['الفيض يقيس مقدار المجال المغناطيسي المار خلال سطح.','الزاوية θ هنا بين المجال والعمود على السطح، وليست مع السطح نفسه.','جرّب الزوايا 0° و90° و180° وقارن الفيض.','الفيض المغناطيسي','Φ = B A cos θ','الفيض = كثافة الفيض × المساحة × جيب تمام الزاوية مع العمود.']
- };
- const n=notes[mode];$('observe').textContent=n[0];$('explain').textContent=n[1];$('challenge').textContent=n[2];$('law-title').textContent=n[3];$('equation').textContent=n[4];$('law-desc').textContent=n[5];
+ const n=experimentData?.[mode];
+ if(n){$('observe').textContent=n.observe;$('explain').textContent=n.explain;$('challenge').textContent=n.challenge;$('law-title').textContent=n.title;$('equation').textContent=n.equation;$('law-desc').textContent=n.description;}
  $('live-note').textContent=mode==='flux'?'الفيض الحالي = B × A × cos θ. عند 90° يكون الفيض صفرًا.':'القراءة تقريبية وفق العلاقات النظرية المثالية، وتتغير لحظيًا مع أدوات التحكم.';
 }
 $('reverse').addEventListener('click',()=>{reverse=!reverse;$('reverse').textContent=reverse?'↕ رجّع اتجاه التيار':'↕ اعكس اتجاه التيار';updateReadout();render()});
 $('pause').addEventListener('click',()=>{paused=!paused;$('pause').textContent=paused?'▶ استئناف الحركة':'Ⅱ إيقاف الحركة'});
 $('reset-view').addEventListener('click',()=>{current=2;distance=1.5;turns=6;reverse=false;paused=false;compassAngle=0;fluxB=.5;area=.2;theta=0;yaw=.72;pitch=.42;zoom=1;$('reverse').textContent='↕ اعكس اتجاه التيار';$('pause').textContent='Ⅱ إيقاف الحركة';build()});
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));mode=b.dataset.mode;build()}));
+fetch('./data/experiments.json').then(r=>{if(!r.ok)throw new Error('تعذر تحميل بيانات التجارب');return r.json()}).then(data=>{experimentData=data;updateReadout()}).catch(err=>console.warn('Using built-in labels; data file unavailable:',err));
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Offline mode unavailable:',err));}
 init();
