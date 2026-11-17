@@ -1,0 +1,11 @@
+{
+  "name": "مختبر المغناطيسية",
+  "short_name": "معمل المغناطيسية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071326",
+  "theme_color": "#071326",
+  "description": "معمل فيزياء تفاعلي يعمل دون اتصال بعد أول زيارة."
+}
