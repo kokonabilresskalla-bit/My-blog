@@ -48,7 +48,7 @@ function ring(radius,y,material){const o=add(new THREE.TorusGeometry(radius,.025
 function labBase(w=3.8,d=2.6){const g=new THREE.Group();g.position.y=-1.48;root.add(g);add(new THREE.BoxGeometry(w,.14,d),dark,[0,0,0],g);add(new THREE.BoxGeometry(w-.12,.025,d-.12),steel,[0,.083,0],g);for(const x of [-1,1])for(const z of [-1,1])add(new THREE.CylinderGeometry(.055,.07,.1,16),gold,[x*(w/2-.16),-.12,z*(d/2-.16)],g);return g}
 function labStand(x=-.8){const g=new THREE.Group();g.position.set(x,-1.3,0);root.add(g);add(new THREE.BoxGeometry(.9,.13,.68),dark,[0,0,0],g);add(new THREE.BoxGeometry(.72,.025,.5),steel,[0,.08,0],g);add(new THREE.CylinderGeometry(.055,.065,2.65,20),steel,[0,1.42,0],g);add(new THREE.CylinderGeometry(.12,.12,.1,20),gold,[0,2.78,0],g);beam([0,1.25,0],[.85,1.25,0],steel,.05,g);return g}
 function supply(){const g=new THREE.Group();g.position.set(-2,-.72,.18);root.add(g);add(new THREE.BoxGeometry(.9,.58,.55),mat(0x263f58,.5,.3),[0,0,0],g);add(new THREE.BoxGeometry(.62,.2,.025),mat(0x07111d,.2,.15),[0,.12,.29],g);const c=document.createElement('canvas');c.width=192;c.height=64;const x=c.getContext('2d');x.fillStyle='#07111d';x.fillRect(0,0,192,64);x.fillStyle='#61f5cf';x.font='bold 34px monospace';x.fillText((['ohm','series'].includes(state.exp)?state.voltage.toFixed(1)+' V':state.current.toFixed(1)+' A'),12,44);const tex=new THREE.CanvasTexture(c),m=new THREE.SpriteMaterial({map:tex,transparent:true});m.userData.owned=true;const s=new THREE.Sprite(m);s.position.set(0,.13,.32);s.scale.set(.5,.17,1);g.add(s);for(const x of [-.24,.24])add(new THREE.CylinderGeometry(.06,.06,.06,20),gold,[x,-.13,.3],g)}
-function resistor(){const g=new THREE.Group();g.position.set(0,-.45,0);root.add(g);beam([-.7,0,0],[-.3,0,0],steel,.025,g);beam([.3,0,0],[.7,0,0],steel,.025,g);const body=add(new THREE.CylinderGeometry(.14,.14,.62,24),mat(0xd7d2c0,.12,.35),[0,0,0],g);body.rotation.z=Math.PI/2;for(let i=0;i<4;i++){const b=add(new THREE.TorusGeometry(.145,.018,8,20),[gold,red,blue,gold][i],[-.19+i*.125,0,0],g);b.rotation.y=Math.PI/2}}
+function resistor(x=0,y=-.45,scale=1){const g=new THREE.Group();g.position.set(x,y,0);root.add(g);beam([-.7,0,0],[-.3,0,0],steel,.025,g);beam([.3,0,0],[.7,0,0],steel,.025,g);const body=add(new THREE.CylinderGeometry(.14,.14,.62,24),mat(0xd7d2c0,.12,.35),[0,0,0],g);body.rotation.z=Math.PI/2;body.scale.y=scale;for(let i=0;i<4;i++){const b=add(new THREE.TorusGeometry(.145,.018,8,20),[gold,red,blue,gold][i],[-.19+i*.125,0,0],g);b.rotation.y=Math.PI/2}}
 function buildScene(){
  clearRoot();animator=()=>{};
  const exp=state.exp;
@@ -59,6 +59,7 @@ function buildScene(){
   tube([[-1.55,-.72,.18],[-.9,-.72,.18],[-.5,-.72,.18],[-.5,1.82,.18],[.75,1.82,.18]],red,.035);
   tube([[.75,-1.72,.18],[-.5,-1.72,.18],[-.5,-.72,.18]],blue,.035);
   arrow([.75,-1.45,0],[.75,1.5,0],state.reverse?blue:red,.04);
+  const currentDots=[-.9,0,.9].map(y=>add(new THREE.SphereGeometry(.07,16,12),state.reverse?blue:red,[.75,y,0]));animator=t=>{if(!state.paused)currentDots.forEach((p,i)=>{const dir=state.reverse?-1:1;p.position.y=-1.2+(((t*.85*dir+i*.8+4)%2.4+2.4)%2.4)})};
   for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.007+Math.min(state.current,8)*.0014);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
   const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);const fieldZ=-(state.reverse?-1:1)*state.current/Math.max(.3,state.distance);needle.rotation.y=Math.atan2(1.0,fieldZ);
   label('تجربة أورستد',[.4,2.25,0]);
@@ -81,22 +82,21 @@ function buildScene(){
   animator=t=>{if(!state.paused)arm.rotation.z=Math.sin(t*2.1)*.42};
   beam([-.7,1.6,0],[.7,1.6,0],steel,.035);
  }else if(exp==='projectile'){
-  const v=state.voltage,a=state.angle*Math.PI/180,T=2*v*Math.sin(a)/9.81,pts=[];for(let i=0;i<=80;i++){const t=T*i/80;pts.push([v*Math.cos(a)*t/3,(v*Math.sin(a)*t-4.905*t*t)/3,0])}tube(pts,cyan,.035);add(new THREE.SphereGeometry(.13,24,16),gold,[0,0,0]);beam([-.5,-1.45,0],[.5,-1.45,0],steel,.035);
+  const v=state.voltage,a=state.angle*Math.PI/180,T=Math.max(.1,2*v*Math.sin(a)/9.81),pts=[];for(let i=0;i<=80;i++){const tt=T*i/80;pts.push([v*Math.cos(a)*tt/3,(v*Math.sin(a)*tt-4.905*tt*tt)/3,0])}tube(pts,cyan,.035);const ball=add(new THREE.SphereGeometry(.13,24,16),gold,[0,0,0]);beam([-.5,-1.45,0],[.5,-1.45,0],steel,.035);animator=t=>{if(!state.paused){const tt=(t%T);ball.position.set(v*Math.cos(a)*tt/3,(v*Math.sin(a)*tt-4.905*tt*tt)/3,0)}};
  }else if(exp==='incline'){
   const a=state.angle*Math.PI/180,plane=add(new THREE.BoxGeometry(3,.12,1.6),dark,[-.15,-.45,0]);plane.rotation.z=a;beam([-1.55,-1.4,0],[1.45*Math.cos(a)-.1,1.45*Math.sin(a)-1.4,0],gold,.045);const block=add(new THREE.BoxGeometry(.38+state.mass*.018,.38+state.mass*.018,.38+state.mass*.018),gold,[-.5,-.5,0]);block.rotation.z=a;
   arrow([-.5,-.5,0],[-.5,-1.4,0],red,.025);
  }else if(exp==='ohm'||exp==='series'){
   labBase(4.8,2.5);supply();
-  const pts=[[-1.8,.45,0],[-.9,.45,0],[-.9,-.45,0],[.9,-.45,0],[.9,.45,0],[1.8,.45,0]];for(let i=0;i<pts.length-1;i++)beam(pts[i],pts[i+1],cyan,.035);
-  resistor();label('R₁ '+state.resistance+' Ω',[-.15,-.02,.28]);label('R₂ '+state.resistance2+' Ω',[.9,-.02,.28]);add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
+  const pts=[[-1.8,.45,0],[-1.35,.45,0],[-1.35,-.45,0],[1.35,-.45,0],[1.35,.45,0],[1.8,.45,0]];for(let i=0;i<pts.length-1;i++)beam(pts[i],pts[i+1],cyan,.035);
+  if(state.exp==='series'){resistor(-.55,-.45,.8+Math.log10(state.resistance)*.12);resistor(.55,-.45,.8+Math.log10(state.resistance2)*.12);label('R₁ '+state.resistance+' Ω',[-.55,-.02,.28]);label('R₂ '+state.resistance2+' Ω',[.55,-.02,.28])}else{resistor(0,-.45,.8+Math.log10(state.resistance)*.12);label('R = '+state.resistance+' Ω',[0,-.02,.28])}add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
  }else if(exp==='reflection'||exp==='refraction'){
   const opticMat=new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide});opticMat.userData.owned=true;add(new THREE.PlaneGeometry(4,3),opticMat,[0,-.6,0]);
   beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
   const a=state.angle*Math.PI/180;beam([-1.7,1.5,0],[0,0,0],gold,.035);
   if(exp==='reflection')beam([0,0,0],[1.7*Math.sin(a),1.7*Math.cos(a),0],gold,.035);else beam([0,0,0],[1.7*Math.sin(a)/state.refractive,-1.7*Math.cos(a),0],cyan,.035);
  }else if(exp==='wave'){
-  const pts=[];for(let x=-3;x<=3;x+=.06)pts.push([x,Math.sin(x*state.frequency)*state.amplitude,0]);tube(pts,cyan,.04);
-  beam([-3.2,0,0],[3.2,0,0],steel,.012);
+  const count=120,positions=new Float32Array((count+1)*3),geo=new THREE.BufferGeometry();for(let i=0;i<=count;i++){const x=-3+6*i/count;positions[i*3]=x;positions[i*3+1]=Math.sin(x*state.frequency)*state.amplitude;positions[i*3+2]=0}geo.setAttribute('position',new THREE.BufferAttribute(positions,3));geo.computeBoundingSphere();const waveMat=new THREE.LineBasicMaterial({color:0x42d8ff});waveMat.userData.owned=true;const waveLine=new THREE.Line(geo,waveMat);root.add(waveLine);beam([-3.2,0,0],[3.2,0,0],steel,.012);animator=t=>{if(!state.paused){const attr=geo.attributes.position;for(let i=0;i<=count;i++){const x=attr.getX(i);attr.setY(i,Math.sin(x*state.frequency-t*2)*state.amplitude)}attr.needsUpdate=true;geo.computeBoundingSphere()}};
  }
 }
 function loop(){const t=performance.now()/1000;if(!state.paused)animator(t);renderer.render(scene,camera);requestAnimationFrame(loop)}
