@@ -1,7 +1,96 @@
-/* Physics Studio: self-contained interactive simulations. No CDN or third-party runtime. */
+/* Physics Studio 3D — Three.js is vendored locally under vendor/three. */
 const $=id=>document.getElementById(id);
-const canvas=$('labCanvas'),ctx=canvas.getContext('2d');
-const state={lab:'magnetism',exp:'wire',current:2,distance:1.5,turns:8,angle:0,area:.2,field:.5,voltage:6,resistance:12,mass:1,height:1,length:1,frequency:2,amplitude:1,refractive:1.5,paused:false,yaw:-.35,pitch:.22,zoom:1,drag:false};
+const mount=$('labCanvas');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.domElement.id='labCanvas';mount.replaceWith(renderer.domElement);
+const canvas=renderer.domElement;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x081a2b);scene.fog=new THREE.Fog(0x081a2b,13,28);
+const camera=new THREE.PerspectiveCamera(43,1,.1,80);
+const hemi=new THREE.HemisphereLight(0xbdeaff,0x142235,2.0);scene.add(hemi);
+const keyLight=new THREE.DirectionalLight(0xffffff,3.1);keyLight.position.set(5,9,6);keyLight.castShadow=true;keyLight.shadow.mapSize.set(1024,1024);keyLight.shadow.camera.left=-7;keyLight.shadow.camera.right=7;keyLight.shadow.camera.top=7;keyLight.shadow.camera.bottom=-7;scene.add(keyLight);
+const rimLight=new THREE.PointLight(0x36bfff,35,18);rimLight.position.set(-5,3,-4);scene.add(rimLight);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x0a1b2b,roughness:.92,metalness:.05}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.65;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(18,36,0x24506c,0x17354c);grid.position.y=-1.63;scene.add(grid);
+const root=new THREE.Group();scene.add(root);
+const state={lab:'magnetism',exp:'wire',current:2,distance:1.5,turns:8,angle:0,area:.2,field:.5,voltage:6,resistance:12,mass:1,height:1,length:1,frequency:2,amplitude:1,refractive:1.5,paused:false,yaw:-.55,pitch:.32,zoom:1,drag:false,reverse:false};
+let animator=()=>{};
+function resize(){const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();updateCamera()}
+new ResizeObserver(resize).observe(canvas);window.addEventListener('resize',resize);
+function updateCamera(){const radius=7.5/state.zoom,cp=Math.cos(state.pitch);camera.position.set(Math.sin(state.yaw)*radius*cp,Math.sin(state.pitch)*radius+1.0,Math.cos(state.yaw)*radius*cp);camera.lookAt(0,0,0)}
+function mat(color,metalness=.25,roughness=.38,extra={}){return new THREE.MeshStandardMaterial({color,metalness,roughness,...extra})}
+const copper=mat(0xc47a3a,.82,.25),gold=mat(0xe8b65c,.78,.22),steel=mat(0x91b5ca,.85,.22),dark=mat(0x18364e,.55,.32),cyan=mat(0x42d8ff,.35,.2,{emissive:0x087ba0,emissiveIntensity:.65}),red=mat(0xff526b,.28,.24,{emissive:0x6c0718,emissiveIntensity:.35}),blue=mat(0x5d9dff,.35,.24,{emissive:0x092d78,emissiveIntensity:.3}),white=mat(0xe9f5ff,.25,.25);
+function add(geo,material,pos=[0,0,0],parent=root){const o=new THREE.Mesh(geo,material);o.position.set(...pos);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function tube(points,material,r=.025,parent=root){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return add(new THREE.TubeGeometry(curve,Math.max(24,points.length*4),r,8,false),material,[0,0,0],parent)}
+function beam(a,b,material,r=.025,parent=root){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A);const m=add(new THREE.CylinderGeometry(r,r,d.length(),12),material,A.clone().add(B).multiplyScalar(.5).toArray(),parent);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m}
+function arrow(a,b,material,r=.035,parent=root){beam(a,b,material,r,parent);const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A).normalize();const head=add(new THREE.ConeGeometry(r*3,r*7,12),material,B.toArray(),parent);head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);return head}
+function clearRoot(){while(root.children.length){const o=root.children.pop();o.traverse?.(n=>{n.geometry?.dispose?.();if(Array.isArray(n.material))n.material.forEach(m=>m.dispose?.());else n.material?.dispose?.()})}}
+function label(text,pos,color='#dff7ff'){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='bold 42px system-ui';x.textAlign='center';x.fillStyle=color;x.fillText(text,128,54);const tex=new THREE.CanvasTexture(c);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.position.set(...pos);sprite.scale.set(1.2,.38,1);root.add(sprite)}
+function compass(pos=[1.7,-.15,0]){
+ const g=new THREE.Group();g.position.set(...pos);root.add(g);
+ add(new THREE.CylinderGeometry(.68,.7,.16,64),dark,[0,0,0],g);
+ const rim=add(new THREE.TorusGeometry(.66,.055,12,64),gold,[0,.1,0],g);rim.rotation.x=Math.PI/2;
+ add(new THREE.CylinderGeometry(.59,.59,.025,64),mat(0x8bb5c9,.35,.16,{transparent:true,opacity:.52}),[0,.095,0],g);
+ for(let i=0;i<60;i++){const a=i*Math.PI/30,r=i%5===0?.53:.56,len=i%5===0?.13:.06;beam([Math.cos(a)*r,.12,Math.sin(a)*r],[Math.cos(a)*(r-len),.12,Math.sin(a)*(r-len)],i%5===0?white:steel,.009,g)}
+ const needle=new THREE.Group();needle.position.y=.16;g.add(needle);
+ const north=add(new THREE.ConeGeometry(.105,.72,4),red,[.0,0,.36],needle);north.rotation.x=Math.PI/2;
+ const south=add(new THREE.ConeGeometry(.105,.72,4),blue,[0,0,-.36],needle);south.rotation.x=-Math.PI/2;
+ add(new THREE.SphereGeometry(.105,24,16),gold,[0,.035,0],needle);
+ add(new THREE.SphereGeometry(.045,16,12),white,[0,.105,0],needle);
+ for(const [t,z] of [['N',-.76],['S',.76]]){const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.font='bold 78px system-ui';q.textAlign='center';q.fillStyle=t==='N'?'#ff7085':'#d7eaff';q.fillText(t,64,88);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.position.set(0,.14,z);s.scale.set(.28,.28,1);g.add(s)}
+ const glass=add(new THREE.CylinderGeometry(.6,.6,.018,64),new THREE.MeshPhysicalMaterial({color:0xbcefff,transparent:true,opacity:.16,roughness:.08,metalness:.1,clearcoat:1,clearcoatRoughness:.05}),[0,.25,0],g);
+ return needle;
+}
+function ring(radius,y,material){const o=add(new THREE.TorusGeometry(radius,.025,10,96),material,[0,y,0]);o.rotation.x=Math.PI/2;return o}
+function buildScene(){
+ clearRoot();animator=()=>{};
+ const exp=state.exp;
+ if(exp==='wire'){
+  add(new THREE.CylinderGeometry(.075,.075,3.5,32),copper,[0,.05,0]);
+  add(new THREE.CylinderGeometry(.12,.12,.08,32),gold,[0,1.82,0]);add(new THREE.CylinderGeometry(.12,.12,.08,32),gold,[0,-1.72,0]);
+  arrow([0,-1.45,0],[0,1.5,0],state.reverse?blue:red,.04);
+  for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.012);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([Math.cos(a)*r,0,Math.sin(a)*r],[Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
+  const needle=compass([Math.max(.9,Math.min(2.3,state.distance*.48)),.0,0]);needle.rotation.y=Math.atan2(state.current/Math.max(.3,state.distance),1.4)*(state.reverse?-1:1);
+  label('سلك مستقيم',[0,2.25,0]);
+ }else if(exp==='coil'||exp==='solenoid'){
+  const n=Math.max(3,Math.min(24,state.turns));
+  for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.035)}
+  for(let y=-1;y<=1;y+=.38)arrow([0,y,-.5],[0,y,.55],cyan,.025);
+  const needle=compass([1.75,.05,0]);needle.rotation.y=.2;
+  label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
+ }else if(exp==='flux'){
+  const plane=add(new THREE.PlaneGeometry(2.8,1.9),new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1}),[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
+  const edge=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82,.025,1.92));add(edge,white,[0,0,0]);
+  for(let x=-2;x<=2;x+=.6)arrow([x,-.8,-1.4],[x,.8,-1.4],cyan,.022);
+  const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
+ }else if(exp==='pendulum'){
+  const pivot=add(new THREE.SphereGeometry(.12,24,16),gold,[0,1.6,0]);
+  const arm=new THREE.Group();arm.position.set(0,1.6,0);root.add(arm);beam([0,0,0],[0,-1.8,0],steel,.025,arm);add(new THREE.SphereGeometry(.24,32,24),gold,[0,-1.8,0],arm);
+  animator=t=>{if(!state.paused)arm.rotation.z=Math.sin(t*2.1)*.42};
+  beam([-.7,1.6,0],[.7,1.6,0],steel,.035);
+ }else if(exp==='projectile'){
+  const v=state.voltage,a=state.angle*Math.PI/180,T=2*v*Math.sin(a)/9.81,pts=[];for(let i=0;i<=80;i++){const t=T*i/80;pts.push([v*Math.cos(a)*t/3,(v*Math.sin(a)*t-4.905*t*t)/3,0])}tube(pts,cyan,.035);add(new THREE.SphereGeometry(.13,24,16),gold,[0,0,0]);beam([-.5,-1.45,0],[.5,-1.45,0],steel,.035);
+ }else if(exp==='incline'){
+  const a=state.angle*Math.PI/180,plane=add(new THREE.BoxGeometry(3,.12,1.6),dark,[-.15,-.45,0]);plane.rotation.z=a;beam([-1.55,-1.4,0],[1.45*Math.cos(a)-.1,1.45*Math.sin(a)-1.4,0],gold,.045);add(new THREE.BoxGeometry(.45,.45,.45),gold,[-.5,-.5,0]).rotation.z=a;
+  arrow([-.5,-.5,0],[-.5,-1.4,0],red,.025);
+ }else if(exp==='ohm'||exp==='series'){
+  const pts=[[-1.8,.45,0],[-.9,.45,0],[-.9,-.45,0],[.9,-.45,0],[.9,.45,0],[1.8,.45,0]];for(let i=0;i<pts.length-1;i++)beam(pts[i],pts[i+1],cyan,.035);
+  add(new THREE.BoxGeometry(.65,.32,.3),gold,[0,-.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
+ }else if(exp==='reflection'||exp==='refraction'){
+  add(new THREE.PlaneGeometry(4,3),new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide}),[0,-.6,0]);
+  beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
+  const a=state.angle*Math.PI/180;beam([-1.7,1.5,0],[0,0,0],gold,.035);
+  if(exp==='reflection')beam([0,0,0],[1.7,1.5,0],gold,.035);else beam([0,0,0],[1.3,-Math.sin(a)/state.refractive*1.7,0],cyan,.035);
+ }else if(exp==='wave'){
+  const pts=[];for(let x=-3;x<=3;x+=.06)pts.push([x,Math.sin(x*state.frequency)*state.amplitude,0]);tube(pts,cyan,.04);
+  beam([-3.2,0,0],[3.2,0,0],steel,.012);
+ }
+}
+function draw(){updateCamera();renderer.render(scene,camera)}
+function loop(){const t=performance.now()/1000;if(!state.paused)animator(t);renderer.render(scene,camera);requestAnimationFrame(loop)}
 const labs=[
 {id:'magnetism',name:'المغناطيسية',icon:'🧲',desc:'المجال المغناطيسي والفيض والبوصلة',items:[['wire','السلك المستقيم','قاعدة اليد اليمنى'],['coil','الملف الدائري','المجال عند المركز'],['solenoid','الملف اللولبي','المجال داخل الملف'],['flux','الفيض المغناطيسي','تأثير الزاوية والمساحة']]},
 {id:'mechanics',name:'الميكانيكا',icon:'⚙️',desc:'الحركة والقوى والطاقة',items:[['pendulum','البندول البسيط','الزمن الدوري'],['projectile','المقذوفات','مسار الحركة'],['incline','المستوى المائل','تحليل القوى']]},
@@ -90,72 +179,9 @@ function updateReadout(){
  }
  $('resultValue').textContent=val+' '+unit;$('resultHint').textContent=secondary;
 }
-function project(x,y,z=0){
- const w=canvas.clientWidth,h=canvas.clientHeight;
- const c=Math.cos(state.yaw),s=Math.sin(state.yaw),cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
- const xx=x*c-z*s,zz=x*s+z*c,yy=y*cp-zz*sp,depth=y*sp+zz*cp;
- const k=Math.min(w,h)*.48*state.zoom/(5+depth*.18);
- return [w/2+xx*k,h*.54-yy*k];
-}
-function line3(a,b,color='#62dfff',width=2){const p=project(...a),q=project(...b);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(...p);ctx.lineTo(...q);ctx.stroke()}
-function circle3(x,y,z,r,color,fill=false){const p=project(x,y,z),edge=project(x+r,y,z),rad=Math.max(2,Math.hypot(edge[0]-p[0],edge[1]-p[1]));ctx.beginPath();ctx.arc(p[0],p[1],rad,0,Math.PI*2);ctx.strokeStyle=color;ctx.lineWidth=2;if(fill){ctx.fillStyle=color;ctx.fill()}else ctx.stroke()}
-function arrow3(a,b,color='#ffb96d',width=3){line3(a,b,color,width);const p=project(...a),q=project(...b),ang=Math.atan2(q[1]-p[1],q[0]-p[0]),sz=9;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(...q);ctx.lineTo(q[0]-sz*Math.cos(ang-.45),q[1]-sz*Math.sin(ang-.45));ctx.lineTo(q[0]-sz*Math.cos(ang+.45),q[1]-sz*Math.sin(ang+.45));ctx.closePath();ctx.fill()}
-function compass(x,y,z,angle){
- const p=project(x,y,z),scale=Math.min(canvas.clientWidth,canvas.clientHeight)*.09*state.zoom;
- const g=ctx.createRadialGradient(p[0]-scale*.25,p[1]-scale*.3,scale*.04,p[0],p[1],scale);
- g.addColorStop(0,'#f7ffff');g.addColorStop(.22,'#b7d9e8');g.addColorStop(.7,'#315c78');g.addColorStop(1,'#10263d');
- ctx.save();ctx.shadowColor='#59dcff';ctx.shadowBlur=18;ctx.fillStyle=g;ctx.strokeStyle='#9eeaff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(...p,scale,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
- for(let i=0;i<36;i++){const a=i*Math.PI/18,r1=scale*.79,r2=scale*(i%3===0?.94:.87);ctx.strokeStyle=i%3===0?'#e6faff':'#8fb8cd';ctx.lineWidth=i%3===0?1.8:1;ctx.beginPath();ctx.moveTo(p[0]+Math.cos(a)*r1,p[1]+Math.sin(a)*r1);ctx.lineTo(p[0]+Math.cos(a)*r2,p[1]+Math.sin(a)*r2);ctx.stroke()}
- ctx.save();ctx.translate(...p);ctx.rotate(angle);
- ctx.shadowColor='#ff526b';ctx.shadowBlur=12;
- ctx.fillStyle='#ff526b';ctx.beginPath();ctx.moveTo(0,-scale*.72);ctx.lineTo(-scale*.12,0);ctx.lineTo(0,scale*.08);ctx.lineTo(scale*.12,0);ctx.closePath();ctx.fill();
- ctx.shadowBlur=0;ctx.fillStyle='#e6f4ff';ctx.beginPath();ctx.moveTo(0,scale*.72);ctx.lineTo(-scale*.12,0);ctx.lineTo(0,scale*.08);ctx.lineTo(scale*.12,0);ctx.closePath();ctx.fill();
- ctx.fillStyle='#f9ffff';ctx.beginPath();ctx.arc(0,0,scale*.085,0,Math.PI*2);ctx.fill();ctx.restore();
- ctx.fillStyle='#ff9eae';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('N',p[0],p[1]-scale*1.08);
-}
-function draw(){
- const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
- const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#102e4a');bg.addColorStop(1,'#061426');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
- for(let i=-5;i<=5;i++){line3([i,-1.3,-5],[i,-1.3,5],'#234763',.7);line3([-5,-1.3,i],[5,-1.3,i],'#234763',.7)}
- const t=performance.now()/1000;
- if(state.exp==='wire'){
-  line3([0,-2,0],[0,2,0],'#f0bd79',7);arrow3([0,-1.7,0],[0,1.7,0],'#ffbf72',3);
-  for(let r=.5;r<2.1;r+=.32){for(let j=0;j<100;j++){const a=j/100*Math.PI*2,b=(j+1)/100*Math.PI*2;line3([Math.cos(a)*r,0,Math.sin(a)*r],[Math.cos(b)*r,0,Math.sin(b)*r],'#38c9ff',1.2)}}
-  compass(state.distance*.35,0,0,t*.2);
- }else if(['coil','solenoid'].includes(state.exp)){
-  const n=state.exp==='coil'?state.turns:state.turns;
-  for(let k=0;k<n;k++){const y=state.exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=100;for(let j=0;j<pts;j++){const a=j/pts*Math.PI*2,b=(j+1)/pts*Math.PI*2;line3([Math.cos(a)*.9,y,Math.sin(a)*.9],[Math.cos(b)*.9,y,Math.sin(b)*.9],'#f4bd78',2)}}
-  for(let y=-1;y<=1;y+=.35)arrow3([0,y,-.2],[0,y,.8],'#49d9ff',1.5);compass(1.6,0,0,t*.18);
- }else if(state.exp==='flux'){
-  const a=state.angle*Math.PI/180;const pts=[[-1.4,0,-.9],[1.4,0,-.9],[1.4,0,.9],[-1.4,0,.9]];
-  for(let i=0;i<4;i++)line3(pts[i],[pts[(i+1)%4][0],pts[(i+1)%4][1]*Math.cos(a)-pts[(i+1)%4][2]*Math.sin(a),pts[(i+1)%4][1]*Math.sin(a)+pts[(i+1)%4][2]*Math.cos(a)],'#8eeaff',2);
-  arrow3([0,0,0],[0,1.4*Math.cos(a),1.4*Math.sin(a)],'#ffbd72',3);
-  for(let x=-2;x<=2;x+=.5)for(let z=-1;z<=1;z+=.5)arrow3([x,-.4,z],[x,.5,z],'#46cfff',1);
- }else if(state.exp==='pendulum'){
-  const ang=Math.sin(t*2)*.35;line3([0,1.8,0],[Math.sin(ang)*1.8,1.8-Math.cos(ang)*1.8,0],'#e8f5ff',2);circle3(Math.sin(ang)*1.8,1.8-Math.cos(ang)*1.8,0,.22,'#ffbf75',true);line3([-.7,1.8,0],[.7,1.8,0],'#7fa8c4',3);
- }else if(state.exp==='projectile'){
-  const v=state.voltage,ang=state.angle*Math.PI/180,T=2*v*Math.sin(ang)/9.81;let prev=null;
-  for(let i=0;i<=80;i++){const tt=T*i/80,x=v*Math.cos(ang)*tt/3,y=(v*Math.sin(ang)*tt-4.905*tt*tt)/3;if(y>=0){if(prev)line3(prev,[x,y,0],'#54d9ff',2);prev=[x,y,0]}}
-  arrow3([0,0,0],[.7,.5,0],'#ffbd72',3);
- }else if(state.exp==='incline'){
-  const a=state.angle*Math.PI/180;line3([-2,-1,0],[2*Math.cos(a)-2,2*Math.sin(a)-1,0],'#d6e9f6',4);line3([-2,-1,0],[2,-1,0],'#8aa8c0',2);circle3(-.2*Math.cos(a),-.2*Math.sin(a),0,.25,'#ffbd72',true);arrow3([0,0,0],[Math.sin(a),-Math.cos(a),0],'#ffbd72',3);
- }else if(['ohm','series'].includes(state.exp)){
-  const pts=[[-1.6,.6,0],[-.8,.6,0],[-.8,-.5,0],[.8,-.5,0],[.8,.6,0],[1.6,.6,0]];
-  for(let i=0;i<pts.length-1;i++)line3(pts[i],pts[i+1],'#64dfff',3);
-  line3([-.35,-.5,0],[.35,-.5,0],'#ffbd72',6);circle3(-1.6,.6,0,.18,'#ffbd72',true);circle3(1.6,.6,0,.18,'#ffbd72',true);
-  arrow3([-.1,.85,0],[.65,.85,0],'#8affc8',2);
- }else if(['reflection','refraction'].includes(state.exp)){
-  line3([-2,0,0],[2,0,0],'#d2f1ff',3);line3([0,-1.5,0],[0,1.5,0],'#7da2be',1.5);
-  const a=state.angle*Math.PI/180;arrow3([-1.7,1.5,0],[0,0,0],'#ffbf72',3);
-  if(state.exp==='reflection')arrow3([0,0,0],[1.7,1.5,0],'#ffbf72',3);
-  else arrow3([0,0,0],[1.4,-Math.sin(a)/state.refractive*1.5,0],'#5fe2ff',3);
- }else if(state.exp==='wave'){
-  let prev=null;for(let x=-3;x<=3;x+=.05){const p=[x,Math.sin(x*state.frequency+t*2)*state.amplitude,0];if(prev)line3(prev,p,'#58d9ff',2);prev=p}
- }
- ctx.fillStyle='#c3eaff';ctx.font='12px system-ui';ctx.textAlign='left';ctx.fillText('اسحب لتدوير النموذج  •  استخدم زري التكبير',14,h-16);
-}
+function draw(){buildScene();updateCamera();renderer.render(scene,camera)}
 function loop(){if(!state.paused)draw();requestAnimationFrame(loop)}
-$('reverseCurrent').onclick=()=>{state.yaw+=Math.PI;draw()};
+$('reverseCurrent').onclick=()=>{state.reverse=!state.reverse;draw()};
 $('pauseMotion').onclick=()=>{state.paused=!state.paused;$('pauseMotion').textContent=state.paused?'استئناف الحركة':'إيقاف الحركة'};
 $('zoomIn').onclick=()=>{state.zoom=Math.min(1.8,state.zoom*1.12);draw()};
 $('zoomOut').onclick=()=>{state.zoom=Math.max(.65,state.zoom/1.12);draw()};
@@ -163,4 +189,4 @@ $('resetScene').onclick=()=>{state.yaw=-.35;state.pitch=.22;state.zoom=1;renderA
 canvas.addEventListener('pointerdown',e=>{state.drag=true;state.px=e.clientX;state.py=e.clientY;canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY;draw()});
 canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);
-renderAll();loop();
+renderAll();resize();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});loop();
