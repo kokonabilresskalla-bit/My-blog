@@ -27,7 +27,7 @@ function add(geo,material,pos=[0,0,0],parent=root){const o=new THREE.Mesh(geo,ma
 function tube(points,material,r=.025,parent=root){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return add(new THREE.TubeGeometry(curve,Math.max(24,points.length*4),r,8,false),material,[0,0,0],parent)}
 function beam(a,b,material,r=.025,parent=root){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A);const m=add(new THREE.CylinderGeometry(r,r,d.length(),12),material,A.clone().add(B).multiplyScalar(.5).toArray(),parent);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m}
 function arrow(a,b,material,r=.035,parent=root){beam(a,b,material,r,parent);const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A).normalize();const head=add(new THREE.ConeGeometry(r*3,r*7,12),material,B.toArray(),parent);head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);return head}
-function clearRoot(){while(root.children.length){const o=root.children.pop();o.traverse?.(n=>{n.geometry?.dispose?.();if(Array.isArray(n.material))n.material.forEach(m=>m.dispose?.());else n.material?.dispose?.()})}}
+function clearRoot(){while(root.children.length){const o=root.children[0];root.remove(o);o.traverse(n=>{n.geometry?.dispose?.();if(n.material){const list=Array.isArray(n.material)?n.material:[n.material];for(const m of list){if(m.userData?.owned){m.map?.dispose?.();m.dispose?.()}}}})}}
 function label(text,pos,color='#dff7ff'){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='bold 42px system-ui';x.textAlign='center';x.fillStyle=color;x.fillText(text,128,54);const tex=new THREE.CanvasTexture(c);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.position.set(...pos);sprite.scale.set(1.2,.38,1);root.add(sprite)}
 function compass(pos=[1.7,-.15,0]){
  const g=new THREE.Group();g.position.set(...pos);root.add(g);
@@ -41,7 +41,7 @@ function compass(pos=[1.7,-.15,0]){
  add(new THREE.SphereGeometry(.105,24,16),gold,[0,.035,0],needle);
  add(new THREE.SphereGeometry(.045,16,12),white,[0,.105,0],needle);
  for(const [t,z] of [['N',-.76],['S',.76]]){const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.font='bold 78px system-ui';q.textAlign='center';q.fillStyle=t==='N'?'#ff7085':'#d7eaff';q.fillText(t,64,88);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.position.set(0,.14,z);s.scale.set(.28,.28,1);g.add(s)}
- const glass=add(new THREE.CylinderGeometry(.6,.6,.018,64),new THREE.MeshPhysicalMaterial({color:0xbcefff,transparent:true,opacity:.16,roughness:.08,metalness:.1,clearcoat:1,clearcoatRoughness:.05}),[0,.25,0],g);
+ const glassMat=new THREE.MeshPhysicalMaterial({color:0xbcefff,transparent:true,opacity:.16,roughness:.08,metalness:.1,clearcoat:1,clearcoatRoughness:.05});glassMat.userData.owned=true;add(new THREE.CylinderGeometry(.6,.6,.018,64),glassMat,[0,.25,0],g);
  return needle;
 }
 function ring(radius,y,material){const o=add(new THREE.TorusGeometry(radius,.025,10,96),material,[0,y,0]);o.rotation.x=Math.PI/2;return o}
@@ -62,7 +62,7 @@ function buildScene(){
   const needle=compass([1.75,.05,0]);needle.rotation.y=.2;
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
-  const plane=add(new THREE.PlaneGeometry(2.8,1.9),new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1}),[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
+  const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const plane=add(new THREE.PlaneGeometry(2.8,1.9),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
   const edge=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82,.025,1.92));add(edge,white,[0,0,0]);
   for(let x=-2;x<=2;x+=.6)arrow([x,-.8,-1.4],[x,.8,-1.4],cyan,.022);
   const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
@@ -80,7 +80,7 @@ function buildScene(){
   const pts=[[-1.8,.45,0],[-.9,.45,0],[-.9,-.45,0],[.9,-.45,0],[.9,.45,0],[1.8,.45,0]];for(let i=0;i<pts.length-1;i++)beam(pts[i],pts[i+1],cyan,.035);
   add(new THREE.BoxGeometry(.65,.32,.3),gold,[0,-.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),red,[-1.8,.45,0]);add(new THREE.CylinderGeometry(.22,.22,.2,32),blue,[1.8,.45,0]);arrow([-.3,.9,0],[.6,.9,0],gold,.035);
  }else if(exp==='reflection'||exp==='refraction'){
-  add(new THREE.PlaneGeometry(4,3),new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide}),[0,-.6,0]);
+  const opticMat=new THREE.MeshStandardMaterial({color:0x18466a,transparent:true,opacity:.3,side:THREE.DoubleSide});opticMat.userData.owned=true;add(new THREE.PlaneGeometry(4,3),opticMat,[0,-.6,0]);
   beam([-2,0,0],[2,0,0],white,.025);beam([0,-1.6,0],[0,1.6,0],steel,.012);
   const a=state.angle*Math.PI/180;beam([-1.7,1.5,0],[0,0,0],gold,.035);
   if(exp==='reflection')beam([0,0,0],[1.7,1.5,0],gold,.035);else beam([0,0,0],[1.3,-Math.sin(a)/state.refractive*1.7,0],cyan,.035);
@@ -89,7 +89,6 @@ function buildScene(){
   beam([-3.2,0,0],[3.2,0,0],steel,.012);
  }
 }
-function draw(){updateCamera();renderer.render(scene,camera)}
 function loop(){const t=performance.now()/1000;if(!state.paused)animator(t);renderer.render(scene,camera);requestAnimationFrame(loop)}
 const labs=[
 {id:'magnetism',name:'المغناطيسية',icon:'🧲',desc:'المجال المغناطيسي والفيض والبوصلة',items:[['wire','السلك المستقيم','قاعدة اليد اليمنى'],['coil','الملف الدائري','المجال عند المركز'],['solenoid','الملف اللولبي','المجال داخل الملف'],['flux','الفيض المغناطيسي','تأثير الزاوية والمساحة']]},
