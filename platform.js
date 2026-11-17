@@ -113,8 +113,6 @@ refraction:['انكسار الضوء','غيّر معامل الانكسار وز
 wave:['الموجات المستعرضة','غيّر التردد والسعة وشاهد شكل الموجة لحظيًا.','v = f λ']
 };
 let activeLab='magnetism';
-function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,1.7);canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));ctx.setTransform(d,0,0,d,0,0)}
-new ResizeObserver(resize).observe(canvas);resize();
 function renderNav(){
  $('labNav').innerHTML=labs.map(l=>'<button class="lab-link '+(l.id===activeLab?'selected':'')+'" data-lab="'+l.id+'"><span>'+l.icon+'</span><span><b>'+l.name+'</b><small>'+l.desc+'</small></span></button>').join('');
  $('labNav').querySelectorAll('button').forEach(b=>b.onclick=()=>{activeLab=b.dataset.lab;state.lab=activeLab;state.exp=labs.find(x=>x.id===activeLab).items[0][0];renderAll()});
