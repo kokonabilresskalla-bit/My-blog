@@ -36,6 +36,8 @@ assert.match(games, /function compute\(\)/);
 assert.match(games, /function validate\(\)/);
 assert.match(css, /\.circuit-board\.parallel/);
 assert.match(sw, /\.\/games\.js/);
+assert.match(sw, /physics-studio-circuit-arcade-v4/, 'offline cache must be versioned after app updates');
+assert.equal(manifest.short_name, 'فيزيا ستوديو');
 assert.equal(manifest.lang, 'ar');
 
 const seriesCurrent = 12 / (6 + 4 + 8);
