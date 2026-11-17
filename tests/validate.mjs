@@ -22,7 +22,7 @@ for (const id of ['wire','coil','solenoid','flux','pendulum','projectile','incli
   assert.ok(app.includes(id + ':['), 'missing experiment information: ' + id);
 }
 for (const key of ['wire','coil','solenoid','flux']) assert.ok(data[key], 'missing experiment data: ' + key);
-assert.match(app, /state\\.reverse\\?\.13:-\.13/, 'wire field arrows must follow the right-hand rule and reverse with current');
+assert.match(app, /state\.reverse\?\.13:-\.13/, 'wire field arrows must follow the right-hand rule and reverse with current');
 assert.match(app, /Math\.min\(30,state\.turns\)/, 'solenoid visualization must support all selectable turns');
 assert.match(app, /Math\.asin\(Math\.max\(-1,Math\.min\(1,Math\.sin\(a\)\/state\.refractive\)\)\)/, 'refraction must use Snell law');
 assert.match(app, /Object\.assign\(state,\{current:2/, 'reset must restore experiment defaults');
