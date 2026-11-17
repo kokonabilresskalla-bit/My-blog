@@ -10,3 +10,13 @@
 .scene-panel:fullscreen{background:#071321;width:100vw;height:100vh;display:flex;flex-direction:column;padding:0}.scene-panel:fullscreen #labCanvas{height:auto;flex:1}.scene-panel:fullscreen .scene-bottom{font-size:12px}.scene-panel:fullscreen .scene-top{padding:14px 20px}
 .expanded-view{position:fixed!important;inset:0!important;z-index:9999!important;width:100vw!important;height:100dvh!important;display:flex!important;flex-direction:column!important;background:#071321!important}.expanded-view #labCanvas{height:auto;flex:1}
 @media(max-width:620px){.arcade-head{align-items:flex-start;flex-direction:column}.arcade-score{display:none}.circuit-slot{min-width:calc(50% - 8px);flex:1}.mission-tabs button{flex:1;font-size:10px;padding:9px 7px}.parts-tray{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.part-chip{justify-content:flex-start}.parts-title{align-items:flex-start;flex-direction:column}.game-actions button{flex:1}.circuit-math{gap:8px 14px}.circuit-board{padding:13px 9px}}
+
+/* Distinct wiring layouts for the series and parallel missions */
+.circuit-board.series .slot-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:center}
+.circuit-board.series .slot-grid:before{content:"";position:absolute;left:4%;right:4%;top:50%;height:3px;background:linear-gradient(90deg,#d94e59,#56cce8,#d94e59);opacity:.45;pointer-events:none}
+.circuit-board.parallel .slot-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"source switch lamp" "r1 r1 r2";gap:10px;align-items:center}
+.circuit-board.parallel [data-slot="source"]{grid-area:source}.circuit-board.parallel [data-slot="switch"]{grid-area:switch}.circuit-board.parallel [data-slot="lamp"]{grid-area:lamp}.circuit-board.parallel [data-slot="r1"]{grid-area:r1}.circuit-board.parallel [data-slot="r2"]{grid-area:r2}
+.circuit-board.parallel .slot-grid:before{content:"";position:absolute;left:17%;right:17%;top:42%;height:42%;border:2px solid #4ebdd4;border-top:0;border-radius:0 0 14px 14px;opacity:.35;pointer-events:none}
+.circuit-board.ohm .slot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.circuit-slot{position:relative;z-index:1}
+@media(max-width:620px){.circuit-board.series .slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.circuit-board.parallel .slot-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"source switch" "r1 r2" "lamp lamp"}.circuit-board.ohm .slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
