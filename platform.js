@@ -58,7 +58,7 @@ function buildScene(){
   add(new THREE.CylinderGeometry(.12,.12,.08,32),gold,[.75,1.82,0]);add(new THREE.CylinderGeometry(.12,.12,.08,32),gold,[.75,-1.72,0]);
   tube([[-1.55,-.72,.18],[-.9,-.72,.18],[-.5,-.72,.18],[-.5,1.82,.18],[.75,1.82,.18]],red,.035);
   tube([[.75,-1.72,.18],[-.5,-1.72,.18],[-.5,-.72,.18]],blue,.035);
-  arrow([.75,-1.45,0],[.75,1.5,0],state.reverse?blue:red,.04);
+  if(state.reverse)arrow([.75,1.5,0],[.75,-1.45,0],blue,.04);else arrow([.75,-1.45,0],[.75,1.5,0],red,.04);
   const currentDots=[-.9,0,.9].map(y=>add(new THREE.SphereGeometry(.07,16,12),state.reverse?blue:red,[.75,y,0]));animator=t=>{if(!state.paused)currentDots.forEach((p,i)=>{const dir=state.reverse?-1:1;p.position.y=-1.2+(((t*.85*dir+i*.8+4)%2.4+2.4)%2.4)})};
   for(let r=.45;r<2.05;r+=.38){const pts=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*2;pts.push([.75+Math.cos(a)*r,0,Math.sin(a)*r])}tube(pts,cyan,.007+Math.min(state.current,8)*.0014);for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;arrow([.75+Math.cos(a)*r,0,Math.sin(a)*r],[.75+Math.cos(a+.13)*r,0,Math.sin(a+.13)*r],cyan,.018)}}
   const needle=compass([.75+Math.max(.9,Math.min(2.0,state.distance*.38)),.0,0]);const fieldZ=-(state.reverse?-1:1)*state.current/Math.max(.3,state.distance);needle.rotation.y=Math.atan2(1.0,fieldZ);
