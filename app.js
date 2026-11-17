@@ -43,13 +43,27 @@ function arrow(a,b,color='#ffbd65',width=3){
 }
 function sphere(p,r,color){dot(p,r,color)}
 function compass(p,angle){
-  // Compass base and needle are drawn in the horizontal plane.
-  ring(p,.43,'y','#78dfff',.95,3,64);ring(p,.37,'y','#284b6b',.9,2,64);
-  for(let i=0;i<16;i++){const a=i*TAU/16;line(V(p.x+Math.cos(a)*.34,p.y+.025,p.z+Math.sin(a)*.34),V(p.x+Math.cos(a)*.40,p.y+.025,p.z+Math.sin(a)*.40),'#c9eaff',1,.85)}
-  const dir=V(Math.cos(angle),0,Math.sin(angle)),mid=V(p.x,p.y+.06,p.z);
-  arrow(mid,V(p.x+dir.x*.32,p.y+.06,p.z+dir.z*.32),'#ff596f',3);
-  arrow(mid,V(p.x-dir.x*.28,p.y+.06,p.z-dir.z*.28),'#e7f5ff',2);
-  dot(V(p.x,p.y+.08,p.z),.045,'#f3fbff');
+  shapes.push({type:'compass',p,angle,depth:rotate(p).depth});
+}
+function drawCompass(s){
+  const {p,angle}=s, at=(x,y,z)=>project(V(p.x+x,p.y+y,p.z+z));
+  const rim=[],face=[];
+  for(let i=0;i<=96;i++){const a=i/96*TAU;rim.push(at(Math.cos(a)*.47,.015,Math.sin(a)*.47));face.push(at(Math.cos(a)*.405,.055,Math.sin(a)*.405))}
+  const path=pts=>{ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.closePath()};
+  ctx.save();ctx.shadowColor='#000';ctx.shadowBlur=18;ctx.shadowOffsetY=7;path(rim);ctx.fillStyle='#07111e';ctx.fill();ctx.restore();
+  path(rim);const metal=ctx.createLinearGradient(rim[5].x,rim[5].y,rim[65].x,rim[65].y);metal.addColorStop(0,'#e8f6ff');metal.addColorStop(.18,'#4e7897');metal.addColorStop(.42,'#122b43');metal.addColorStop(.72,'#7ba9c6');metal.addColorStop(1,'#172b40');ctx.fillStyle=metal;ctx.fill();ctx.strokeStyle='#b9eaff';ctx.lineWidth=1.6;ctx.stroke();
+  path(face);const glass=ctx.createRadialGradient(face[22].x,face[22].y,1,face[48].x,face[48].y,Math.max(25,Math.hypot(face[0].x-face[48].x,face[0].y-face[48].y)));glass.addColorStop(0,'rgba(27,71,103,.96)');glass.addColorStop(.7,'rgba(8,27,48,.97)');glass.addColorStop(1,'rgba(3,14,27,.98)');ctx.fillStyle=glass;ctx.fill();
+  for(let i=0;i<60;i++){const a=i/60*TAU,major=i%5===0,r1=major?.335:.365,A=at(Math.cos(a)*r1,.072,Math.sin(a)*r1),B=at(Math.cos(a)*.39,.072,Math.sin(a)*.39);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.strokeStyle=major?'#d7f4ff':'#8bb5d1';ctx.globalAlpha=major?.95:.55;ctx.lineWidth=major?1.5:.7;ctx.stroke()}
+  ctx.globalAlpha=1;
+  for(const [label,a,color] of [['N',0,'#ff6678'],['E',Math.PI/2,'#d8efff'],['S',Math.PI,'#d8efff'],['W',Math.PI*1.5,'#d8efff']]){const q=at(Math.cos(a)*.285,.085,Math.sin(a)*.285);ctx.fillStyle=color;ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillText(label,q.x,q.y);ctx.shadowBlur=0}
+  const ux=Math.cos(angle),uz=Math.sin(angle),px=-uz,pz=ux;
+  const point=(along,side)=>at(ux*along+px*side,.105,uz*along+pz*side);
+  const tip=point(.315,0),pivot=point(0,0),left=point(-.035,.052),right=point(-.035,-.052),tail=point(-.275,0);
+  ctx.save();ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.shadowOffsetY=2;
+  path([tip,left,pivot,right]);const red=ctx.createLinearGradient(tip.x,tip.y,pivot.x,pivot.y);red.addColorStop(0,'#fff0f0');red.addColorStop(.22,'#ff536c');red.addColorStop(1,'#a91d3c');ctx.fillStyle=red;ctx.fill();
+  path([tail,right,pivot,left]);const white=ctx.createLinearGradient(tail.x,tail.y,pivot.x,pivot.y);white.addColorStop(0,'#eaf8ff');white.addColorStop(.5,'#7896ad');white.addColorStop(1,'#f5fbff');ctx.fillStyle=white;ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.ellipse(face[18].x,face[18].y,Math.max(8,Math.abs(face[0].x-face[48].x)*.25),Math.max(3,Math.abs(face[0].y-face[48].y)*.18),-.2,0,TAU);ctx.strokeStyle='rgba(190,239,255,.13)';ctx.lineWidth=2;ctx.stroke();
+  const hub=at(0,.13,0),hr=Math.max(3,hub.scale*.075),hg=ctx.createRadialGradient(hub.x-hr*.3,hub.y-hr*.3,1,hub.x,hub.y,hr);hg.addColorStop(0,'#fff');hg.addColorStop(.35,'#b8eaff');hg.addColorStop(1,'#315c7b');ctx.fillStyle=hg;ctx.beginPath();ctx.arc(hub.x,hub.y,hr,0,TAU);ctx.fill();
 }
 function addGrid(){
   for(let i=-5;i<=5;i++){line(V(i,-1.2,-5),V(i,-1.2,5),'#24415c',1,.48);line(V(-5,-1.2,i),V(5,-1.2,i),'#24415c',1,.48)}
@@ -94,6 +108,7 @@ function render(){
     else if(s.type==='dot'){const p=project(s.p),r=Math.max(2,s.r*p.scale*1.7);ctx.shadowColor=s.color;ctx.shadowBlur=12;const gr=ctx.createRadialGradient(p.x-r*.3,p.y-r*.3,1,p.x,p.y,r);gr.addColorStop(0,'#ffffff');gr.addColorStop(.25,s.color);gr.addColorStop(1,s.color);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(p.x,p.y,r,0,TAU);ctx.fill()}
     else if(s.type==='head'){const p=s.p,p1=s.p1,p2=s.p2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.closePath();ctx.fill()}
     else if(s.type==='fill'){const pts=s.points.map(project);ctx.fillStyle=s.color;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();ctx.fill()}
+    else if(s.type==='compass'){drawCompass(s)}
     ctx.restore();
   }
   // Small orientation marker
