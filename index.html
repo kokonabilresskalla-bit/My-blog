@@ -1,33 +1,28 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#071326">
-<meta name="description" content="معمل فيزياء تفاعلي لتجارب المغناطيسية والفيض والبوصلة. يعمل محليًا دون مكتبات خارجية.">
-<link rel="manifest" href="manifest.json">
-<title>مختبر المغناطيسية | فيزياء تالتة ثانوي</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071321"><meta name="description" content="منصة تجارب فيزياء تفاعلية: مغناطيسية وميكانيكا وكهرباء وبصريات وموجات.">
+<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="platform.css">
+<title>فيزيا ستوديو | منصة التجارب العلمية</title>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="./"><span class="brand-icon">∿</span><span><b>مختبر المغناطيسية</b><small>فيزياء تالتة ثانوي · اتعلم بالتجربة</small></span></a><span class="top-chip">معمل افتراضي تفاعلي 3D</span></header>
+<header class="studio-header"><div class="studio-brand"><span class="brand-symbol">Φ</span><span><b>فيزيا ستوديو</b><small>مختبر العلوم التفاعلي · افهم بالتجربة</small></span></div><span class="header-status">● يعمل محليًا · بدون مكتبات خارجية</span></header>
 <main>
-<section class="intro"><div><p class="eyebrow">افهمها بعينك… مش بالحفظ بس</p><h1>جرّب المغناطيسية بنفسك</h1><p>غيّر التيار، حرّك البوصلة، لفّ الملف، وشوف المجال المغناطيسي بيتصرف إزاي لحظة بلحظة.</p></div><div class="intro-mark">🧲</div></section>
-<nav class="experiment-tabs" aria-label="التجارب">
-<button class="tab active" data-mode="wire">01 · السلك المستقيم</button><button class="tab" data-mode="coil">02 · الملف الدائري</button><button class="tab" data-mode="solenoid">03 · الملف اللولبي</button><button class="tab" data-mode="flux">04 · الفيض المغناطيسي</button>
-</nav>
-<section class="workspace">
-<div class="visual-card"><div class="visual-head"><div><span class="live-dot"></span><b id="scene-title">تجربة أورستد: سلك وبوصلة</b><small id="scene-subtitle">حرّك البوصلة حوالين السلك ولاحظ اتجاه الإبرة</small></div><button id="reset-view" class="ghost">إعادة ضبط المشهد ↺</button></div><div id="viewport"><div class="loading">بيتم تجهيز المعمل ثلاثي الأبعاد…</div></div><div class="visual-foot"><span>🖱️ اسحب لتدوير المشهد</span><span>＋ / − للتقريب والإبعاد</span><span>المشهد توضيحي وقابل للتجربة</span></div></div>
-<aside class="side">
-<div class="control-card"><div class="card-heading"><h2>لوحة التجربة</h2><span class="pill">تحكم مباشر</span></div>
-<div id="controls"></div>
-<div class="button-row"><button class="action secondary" id="reverse">↕ اعكس اتجاه التيار</button><button class="action" id="pause">Ⅱ إيقاف الحركة</button></div>
+<section class="hero"><div><p class="eyebrow">PHYSICS INTERACTIVE STUDIO</p><h1>مش بس تذاكر الفيزياء… جرّبها</h1><p>منصة تجارب افتراضية تفاعلية تجمع فروع الفيزياء في مكان واحد. غيّر القيم، حرّك النماذج، وشوف القوانين وهي بتشتغل قدامك.</p></div><div class="hero-art">🔬</div></section>
+<div class="studio-layout">
+<aside class="sidebar"><h2>أقسام المعمل</h2><nav id="labNav"></nav></aside>
+<section class="content">
+<div class="section-heading"><div><h2 id="catalogTitle">المغناطيسية</h2><p id="catalogDesc">اختار تجربة وابدأ استكشافها</p></div></div>
+<div class="experiment-grid" id="experimentGrid"></div>
+<div class="workbench">
+<section class="panel scene-panel"><div class="scene-top"><div><b id="experimentTitle">تجربة أورستد</b><small id="experimentIntro">غيّر القيم ولاحظ النتيجة</small></div><div class="scene-tools"><button class="tool-btn" id="zoomOut">−</button><button class="tool-btn" id="zoomIn">＋</button><button class="tool-btn" id="resetScene">إعادة ضبط</button></div></div><canvas id="labCanvas" aria-label="نموذج تفاعلي للتجربة العلمية"></canvas><div class="scene-bottom"><span>اسحب لتدوير النموذج</span><span>النموذج توضيحي تعليمي</span><span>تفاعل مباشر</span></div></section>
+<aside><section class="panel control-panel"><h3>أدوات التحكم في التجربة</h3><div id="controlPanel"></div><button class="small-btn" id="reverseCurrent">اعكس اتجاه التيار</button><button class="small-btn" id="pauseMotion">إيقاف الحركة</button></section><section class="panel result-panel"><h3>النتيجة اللحظية</h3><div class="result-number" id="resultValue">—</div><p class="result-hint" id="resultHint">غيّر أحد المتغيرات لمشاهدة التأثير.</p></section></aside>
 </div>
-<div class="readout-card"><h3>اللي بيحصل دلوقتي</h3><div class="readout-grid"><div><small>شدة المجال</small><b id="field-value">—</b></div><div><small>اتجاه المجال</small><b id="field-direction">—</b></div><div><small>زاوية البوصلة</small><b id="needle-value">—</b></div><div><small>شدة التيار</small><b id="current-value">—</b></div></div><p id="live-note" class="live-note">غيّر أي قيمة وشوف تأثيرها في الرسم والقراءات.</p></div>
-</aside>
-</section>
-<section class="learning-grid"><article class="learn-card"><span class="learn-icon">👀</span><h3>لاحظ</h3><p id="observe">البوصلة بتتجه مع المجال المغناطيسي المتكوّن حول السلك.</p></article><article class="learn-card"><span class="learn-icon">🧠</span><h3>افهم</h3><p id="explain">اتجاه المجال بيتحدد بقاعدة قبضة اليد اليمنى: الإبهام مع التيار والأصابع مع المجال.</p></article><article class="learn-card"><span class="learn-icon">✋</span><h3>جرّب بنفسك</h3><p id="challenge">اعكس التيار من الزر وشوف هل اتجاه انحراف البوصلة هيتغير ولا لأ.</p></article></section>
-<section class="concept-card"><div><p class="eyebrow">القانون المرتبط بالتجربة</p><h2 id="law-title">المجال حول سلك مستقيم طويل</h2><p id="law-desc">شدة المجال بتزيد بزيادة شدة التيار، وبتقل بزيادة البعد عن السلك.</p></div><div class="equation" id="equation">B = μ₀ I / 2πr</div></section>
-<footer>مختبر تعليمي تفاعلي · معمول لمساعدة طالب تالتة ثانوي على فهم التجارب عمليًا</footer>
+<section class="panel equation-panel"><div><h3>القانون المستخدم</h3><p>القيمة المعروضة ناتجة عن النموذج الرياضي المثالي للتجربة.</p></div><div class="equation" id="equation">B = μ₀ I / 2πr</div></section>
+<div class="safety-note">تنبيه: دي محاكاة تعليمية وليست بديلًا عن التجربة المعملية الحقيقية. أي تجربة واقعية تستخدم كهرباء أو حرارة أو أدوات معملية لازم تتم بإشراف مدرس وبمعدات آمنة.</div>
+</section></div>
+<footer>فيزيا ستوديو · منصة تعليمية مفتوحة المصدر · HTML + CSS + JavaScript · لا تحتاج تثبيت مكتبات أو اتصالًا بخدمات خارجية أثناء التشغيل</footer>
 </main>
-<script type="module" src="app.js"></script>
+<script type="module" src="platform.js"></script>
 </body></html>
