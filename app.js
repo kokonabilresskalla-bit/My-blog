@@ -92,7 +92,7 @@ function render(){
   for(const s of shapes){ctx.save();ctx.globalAlpha=s.alpha??1;ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineCap='round';ctx.lineJoin='round';
     if(s.type==='line'){const a=project(s.a),b=project(s.b);ctx.lineWidth=Math.max(.7,s.width*(a.scale+b.scale)/2);ctx.shadowColor=s.color;ctx.shadowBlur=s.width>2?8:3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
     else if(s.type==='dot'){const p=project(s.p),r=Math.max(2,s.r*p.scale*1.7);ctx.shadowColor=s.color;ctx.shadowBlur=12;const gr=ctx.createRadialGradient(p.x-r*.3,p.y-r*.3,1,p.x,p.y,r);gr.addColorStop(0,'#ffffff');gr.addColorStop(.25,s.color);gr.addColorStop(1,s.color);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(p.x,p.y,r,0,TAU);ctx.fill()}
-    else if(s.type==='head'){const p=project(s.p),p1=project(s.p1),p2=project(s.p2);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.closePath();ctx.fill()}
+    else if(s.type==='head'){const p=s.p,p1=s.p1,p2=s.p2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.closePath();ctx.fill()}
     else if(s.type==='fill'){const pts=s.points.map(project);ctx.fillStyle=s.color;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();ctx.fill()}
     ctx.restore();
   }
