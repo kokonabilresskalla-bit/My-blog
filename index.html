@@ -16,14 +16,15 @@
 <div class="section-heading"><div><h2 id="catalogTitle">المغناطيسية</h2><p id="catalogDesc">اختار تجربة وابدأ استكشافها</p></div></div>
 <div class="experiment-grid" id="experimentGrid"></div>
 <div class="workbench">
-<section class="panel scene-panel"><div class="scene-top"><div><b id="experimentTitle">تجربة أورستد</b><small id="experimentIntro">غيّر القيم ولاحظ النتيجة</small></div><div class="scene-tools"><button class="tool-btn" id="zoomOut">−</button><button class="tool-btn" id="zoomIn">＋</button><button class="tool-btn" id="resetScene">إعادة ضبط</button></div></div><canvas id="labCanvas" aria-label="نموذج تفاعلي للتجربة العلمية"></canvas><div class="scene-bottom"><span>اسحب لتدوير النموذج</span><span>النموذج توضيحي تعليمي</span><span>تفاعل مباشر</span></div></section>
+<section class="panel scene-panel"><div class="scene-top"><div><b id="experimentTitle">تجربة أورستد</b><small id="experimentIntro">غيّر القيم ولاحظ النتيجة</small></div><div class="scene-tools"><button class="tool-btn" id="zoomOut">−</button><button class="tool-btn" id="zoomIn">＋</button><button class="tool-btn" id="resetScene">إعادة ضبط</button><button class="tool-btn" id="fullscreenScene">⛶ تكبير</button></div></div><canvas id="labCanvas" aria-label="نموذج تفاعلي للتجربة العلمية"></canvas><div class="scene-bottom"><span>اسحب لتدوير النموذج</span><span>النموذج توضيحي تعليمي</span><span>تفاعل مباشر</span></div></section>
 <aside><section class="panel control-panel"><h3>أدوات التحكم في التجربة</h3><div id="controlPanel"></div><button class="small-btn" id="reverseCurrent">اعكس اتجاه التيار</button><button class="small-btn" id="pauseMotion">إيقاف الحركة</button></section><section class="panel result-panel"><h3>النتيجة اللحظية</h3><div class="result-number" id="resultValue">—</div><p class="result-hint" id="resultHint">غيّر أحد المتغيرات لمشاهدة التأثير.</p></section></aside>
 </div>
+<section id="circuitArcade" class="panel circuit-arcade"></section>
 <section class="panel equation-panel"><div><h3>القانون المستخدم</h3><p>القيمة المعروضة ناتجة عن النموذج الرياضي المثالي للتجربة.</p></div><div class="equation" id="equation">B = μ₀ I / 2πr</div></section>
 <div class="safety-note">تنبيه: دي محاكاة تعليمية وليست بديلًا عن التجربة المعملية الحقيقية. أي تجربة واقعية تستخدم كهرباء أو حرارة أو أدوات معملية لازم تتم بإشراف مدرس وبمعدات آمنة.</div>
 </section></div>
 <footer>فيزيا ستوديو · منصة تعليمية مفتوحة المصدر · HTML + CSS + JavaScript · محرك Three.js مدمج محليًا · دون CDN</footer>
 </main>
 <script src="vendor/three/three.min.js"></script>
-<script type="module" src="platform.js"></script>
+<script type="module" src="platform.js"></script><script type="module" src="games.js"></script>
 </body></html>
