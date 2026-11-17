@@ -28,7 +28,7 @@ function tube(points,material,r=.025,parent=root){const curve=new THREE.CatmullR
 function beam(a,b,material,r=.025,parent=root){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A);const m=add(new THREE.CylinderGeometry(r,r,d.length(),12),material,A.clone().add(B).multiplyScalar(.5).toArray(),parent);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m}
 function arrow(a,b,material,r=.035,parent=root){beam(a,b,material,r,parent);const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A).normalize();const head=add(new THREE.ConeGeometry(r*3,r*7,12),material,B.toArray(),parent);head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);return head}
 function clearRoot(){while(root.children.length){const o=root.children[0];root.remove(o);o.traverse(n=>{n.geometry?.dispose?.();if(n.material){const list=Array.isArray(n.material)?n.material:[n.material];for(const m of list){if(m.userData?.owned){m.map?.dispose?.();m.dispose?.()}}}})}}
-function label(text,pos,color='#dff7ff'){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='bold 42px system-ui';x.textAlign='center';x.fillStyle=color;x.fillText(text,128,54);const tex=new THREE.CanvasTexture(c);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.position.set(...pos);sprite.scale.set(1.2,.38,1);root.add(sprite)}
+function label(text,pos,color='#dff7ff'){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='bold 42px system-ui';x.textAlign='center';x.fillStyle=color;x.fillText(text,128,54);const tex=new THREE.CanvasTexture(c);const spriteMat=new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false});spriteMat.userData.owned=true;const sprite=new THREE.Sprite(spriteMat);sprite.position.set(...pos);sprite.scale.set(1.2,.38,1);root.add(sprite)}
 function compass(pos=[1.7,-.15,0]){
  const g=new THREE.Group();g.position.set(...pos);root.add(g);
  add(new THREE.CylinderGeometry(.68,.7,.16,64),dark,[0,0,0],g);
@@ -40,7 +40,7 @@ function compass(pos=[1.7,-.15,0]){
  const south=add(new THREE.ConeGeometry(.105,.72,4),blue,[0,0,-.36],needle);south.rotation.x=-Math.PI/2;
  add(new THREE.SphereGeometry(.105,24,16),gold,[0,.035,0],needle);
  add(new THREE.SphereGeometry(.045,16,12),white,[0,.105,0],needle);
- for(const [t,z] of [['N',-.76],['S',.76]]){const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.font='bold 78px system-ui';q.textAlign='center';q.fillStyle=t==='N'?'#ff7085':'#d7eaff';q.fillText(t,64,88);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.position.set(0,.14,z);s.scale.set(.28,.28,1);g.add(s)}
+ for(const [t,z] of [['N',-.76],['S',.76]]){const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.font='bold 78px system-ui';q.textAlign='center';q.fillStyle=t==='N'?'#ff7085':'#d7eaff';q.fillText(t,64,88);const spriteTex=new THREE.CanvasTexture(c),spriteMat=new THREE.SpriteMaterial({map:spriteTex,transparent:true});spriteMat.userData.owned=true;const s=new THREE.Sprite(spriteMat);s.position.set(0,.14,z);s.scale.set(.28,.28,1);g.add(s)}
  const glassMat=new THREE.MeshPhysicalMaterial({color:0xbcefff,transparent:true,opacity:.16,roughness:.08,metalness:.1,clearcoat:1,clearcoatRoughness:.05});glassMat.userData.owned=true;add(new THREE.CylinderGeometry(.6,.6,.018,64),glassMat,[0,.25,0],g);
  return needle;
 }
@@ -63,7 +63,7 @@ function buildScene(){
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
   const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const plane=add(new THREE.PlaneGeometry(2.8,1.9),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
-  const edge=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82,.025,1.92));add(edge,white,[0,0,0]);
+  const edgeGeom=new THREE.EdgesGeometry(new THREE.BoxGeometry(2.82,.025,1.92));const edgeMat=new THREE.LineBasicMaterial({color:0xe7f8ff});edgeMat.userData.owned=true;const edge=new THREE.LineSegments(edgeGeom,edgeMat);edge.rotation.x=Math.PI/2-state.angle*Math.PI/180;root.add(edge);
   for(let x=-2;x<=2;x+=.6)arrow([x,-.8,-1.4],[x,.8,-1.4],cyan,.022);
   const normal=new THREE.Vector3(0,1,0).applyAxisAngle(new THREE.Vector3(1,0,0),state.angle*Math.PI/180);arrow([0,0,0],normal.clone().multiplyScalar(1.7).toArray(),gold,.04);label('سطح الفيض',[0,1.9,0]);
  }else if(exp==='pendulum'){
