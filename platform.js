@@ -29,8 +29,8 @@ function beam(a,b,material,r=.025,parent=root){const A=new THREE.Vector3(...a),B
 function arrow(a,b,material,r=.035,parent=root){beam(a,b,material,r,parent);const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A).normalize();const head=add(new THREE.ConeGeometry(r*3,r*7,12),material,B.toArray(),parent);head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);return head}
 function clearRoot(){while(root.children.length){const o=root.children[0];root.remove(o);o.traverse(n=>{n.geometry?.dispose?.();if(n.material){const list=Array.isArray(n.material)?n.material:[n.material];for(const m of list){if(m.userData?.owned){m.map?.dispose?.();m.dispose?.()}}}})}}
 function label(text,pos,color='#dff7ff'){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='bold 42px system-ui';x.textAlign='center';x.fillStyle=color;x.fillText(text,128,54);const tex=new THREE.CanvasTexture(c);const spriteMat=new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false});spriteMat.userData.owned=true;const sprite=new THREE.Sprite(spriteMat);sprite.position.set(...pos);sprite.scale.set(1.2,.38,1);root.add(sprite)}
-function compass(pos=[1.7,-.15,0]){
- const g=new THREE.Group();g.position.set(...pos);root.add(g);
+function compass(pos=[1.7,-.15,0],vertical=false){
+ const g=new THREE.Group();g.position.set(...pos);if(vertical)g.rotation.x=Math.PI/2;root.add(g);
  add(new THREE.CylinderGeometry(.68,.7,.16,64),dark,[0,0,0],g);
  const rim=add(new THREE.TorusGeometry(.66,.055,12,64),gold,[0,.1,0],g);rim.rotation.x=Math.PI/2;
  add(new THREE.CylinderGeometry(.59,.59,.025,64),mat(0x8bb5c9,.35,.16,{transparent:true,opacity:.52}),[0,.095,0],g);
@@ -67,8 +67,8 @@ function buildScene(){
   labBase();labStand(-1.25);labStand(1.25);
   const n=Math.max(3,Math.min(30,state.turns));
   for(let k=0;k<(exp==='coil'?1:n);k++){const y=exp==='coil'?0:(k/(n-1)-.5)*2.8,pts=[];for(let j=0;j<=100;j++){const a=j/100*Math.PI*2;pts.push([Math.cos(a)*1.05,y,Math.sin(a)*1.05])}tube(pts,copper,.025+state.current*.0015)}
-  for(let y=-1;y<=1;y+=.38)arrow([0,y,state.reverse?.55:-.5],[0,y,state.reverse?-.55:.55],state.reverse?blue:cyan,.015+state.current*.0015);
-  const needle=compass([1.75,.05,0]);needle.rotation.y=state.reverse?Math.PI:0;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
+  if(exp==='coil'){arrow([0,state.reverse?-.65:.65,0],[0,state.reverse?.65:-.65,0],state.reverse?blue:cyan,.035)}else{for(let x=-.36;x<=.36;x+=.36)for(let z=-.28;z<=.28;z+=.28)arrow([x,state.reverse?-1.1:1.1,z],[x,state.reverse?1.1:-1.1,z],state.reverse?blue:cyan,.022)}
+  const needle=compass([1.75,.05,0],true);needle.rotation.y=state.reverse?0:Math.PI;tube([[-1.25,1.1,0],[0,1.1,0],[1.25,1.1,0]],red,.03);tube([[1.25,-1.2,0],[0,-1.2,0],[-1.25,-1.2,0]],blue,.03);
   label(exp==='coil'?'ملف دائري':'ملف لولبي',[0,2.0,0]);
  }else if(exp==='flux'){
   const fluxMat=new THREE.MeshPhysicalMaterial({color:0x50cfff,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.15,roughness:.2,clearcoat:1});fluxMat.userData.owned=true;const areaScale=Math.sqrt(state.area/.2),plane=add(new THREE.PlaneGeometry(2.8*areaScale,1.9*areaScale),fluxMat,[0,0,0]);plane.rotation.x=Math.PI/2-state.angle*Math.PI/180;
