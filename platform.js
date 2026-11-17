@@ -180,13 +180,12 @@ function updateReadout(){
  $('resultValue').textContent=val+' '+unit;$('resultHint').textContent=secondary;
 }
 function draw(){buildScene();updateCamera();renderer.render(scene,camera)}
-function loop(){if(!state.paused)draw();requestAnimationFrame(loop)}
 $('reverseCurrent').onclick=()=>{state.reverse=!state.reverse;draw()};
 $('pauseMotion').onclick=()=>{state.paused=!state.paused;$('pauseMotion').textContent=state.paused?'استئناف الحركة':'إيقاف الحركة'};
 $('zoomIn').onclick=()=>{state.zoom=Math.min(1.8,state.zoom*1.12);draw()};
 $('zoomOut').onclick=()=>{state.zoom=Math.max(.65,state.zoom/1.12);draw()};
 $('resetScene').onclick=()=>{state.yaw=-.35;state.pitch=.22;state.zoom=1;renderAll()};
 canvas.addEventListener('pointerdown',e=>{state.drag=true;state.px=e.clientX;state.py=e.clientY;canvas.setPointerCapture(e.pointerId)});
-canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY;draw()});
+canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.px)*.008;state.pitch=Math.max(-1.1,Math.min(1.1,state.pitch+(e.clientY-state.py)*.006));state.px=e.clientX;state.py=e.clientY;updateCamera();renderer.render(scene,camera)});
 canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);
 renderAll();resize();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});loop();
